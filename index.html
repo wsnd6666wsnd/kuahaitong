@@ -372,8 +372,25 @@ function maskSensitive(text) {
   // 4) 其他 15 位以上纯数字（银行账号等）
   t = t.replace(/\b\d{15,}\b/g, function () { found.id++; return "〔账号〕"; });
 
-  // 3) 金额（带货币单位）
+  // 3a) 中文数字金额（贰佰万 / 二十二万 / 三亿五千万 / 壹佰贰拾万元）
+  var CN_RE = /(?:人民币|美元|USD)?\s*[零〇一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟]{2,14}\s*(?:元|美元|块)/g;
+  t = t.replace(CN_RE, function () { found.money++; return "〔金额〕"; });
+
+  // 3a-2) 中文数字 + 万/亿 结尾（无量词，如「尾款二十二万」）
+  var CN_RE2 = /[零〇一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟]{2,14}[万亿](?![元])/g;
+  t = t.replace(CN_RE2, function (m) {
+    if (/[零〇一二三四五六七八九壹贰叁肆伍陆柒捌玖]/.test(m.slice(0, -1))) {
+      found.money++; return "〔金额〕";
+    }
+    return m;
+  });
+  // 3b) 阿拉伯数字金额（带货币单位）
   t = t.replace(/(?:人民币|美元|USD|RMB|￥|\$)?\s*\d[\d,]*(?:\.\d+)?\s*(?:万元|亿元|美元|元|块)/g, function () {
+    found.money++; return "〔金额〕";
+  });
+
+  // 3c) 纯数字带"万"等量词（如「尾款 22 万」「850 万」）
+  t = t.replace(/(?:人民币|美元)?\s*\d[\d,]*(?:\.\d+)?\s*[万亿]/g, function () {
     found.money++; return "〔金额〕";
   });
 
