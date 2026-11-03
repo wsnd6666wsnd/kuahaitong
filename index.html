@@ -994,27 +994,108 @@ async function renderZhenduan(text) {
     return;
   }
 
-  const frags = splitClauses(text);
+  const rawFrags = splitClauses(text);
+  const masked = maskSummary(rawFrags);
+  const frags = masked.frags;
+  const stat = masked.stat;
 
-  let html = '<div class="lbl">第 1 步 · 案情切分为 ' + frags.length + ' 个片段</div>';
-  html += '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin-bottom:18px;font-size:13px;line-height:2;">';
-  html += '<span style="color:var(--sub);font-size:11.5px;">模型只接收以下片段，不接收完整案情叙述 —— 此为最小必要上下文（Data Minimization）</span><br>';
+  let html = '<div class="lbl">第 1 步 · 案情切分为 ' + frags.length + ' 个片段，已本地脱敏，可直接编辑</div>';
+  html += '<div style="background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:0 4px 4px 0;padding:13px 16px;margin-bottom:10px;">';
+  html += '<div style="font-size:11.5px;color:var(--sub);margin-bottom:10px;">' +
+          '以下内容将发送至 AI 模型' +
+          (stat.total > 0 ? '；已在本地遮蔽 <b style="color:var(--green);">' + stat.total + ' 处</b>敏感信息' : '') +
+          '。可逐条修改、删除或补充。</div>';
+
+  if (stat.total > 0) {
+    const parts = [];
+    if (stat.company) parts.push("公司名 " + stat.company);
+    if (stat.money) parts.push("金额 " + stat.money);
+    if (stat.id) parts.push("证件/账号 " + stat.id);
+    if (stat.date) parts.push("日期 " + stat.date);
+    if (stat.phone) parts.push("电话 " + stat.phone);
+    if (stat.email) parts.push("邮箱 " + stat.email);
+    if (stat.addr) parts.push("地址 " + stat.addr);
+    html += '<div style="font-size:11.5px;color:#C56A4A;margin-bottom:10px;">遮蔽明细：' + parts.join("　·　") + '</div>';
+  }
+
+  html += '<div id="frag-list2">';
   frags.forEach(function (f, i) {
-    html += '<span style="display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:2px 8px;margin:3px 4px 3px 0;">' +
-            '<span style="color:var(--sub);font-family:Consolas,monospace;font-size:10px;">' + (i+1) + '</span> ' + f + '</span>';
+    html += '<div class="frag-row2" style="display:flex;gap:8px;align-items:center;margin-bottom:7px;">' +
+            '<span style="flex:0 0 24px;font-family:Consolas,monospace;font-size:11px;color:var(--sub);text-align:right;">' + (i+1) + '</span>' +
+            '<input type="text" class="frag-input2" value="' + f.replace(/"/g, "&quot;") + '" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;">' +
+            '<button class="frag-del2" style="flex:0 0 30px;height:30px;border:1px solid var(--line);background:#fff;color:#C56A4A;border-radius:3px;cursor:pointer;font-size:14px;">×</button>' +
+            '</div>';
   });
   html += '</div>';
+  html += '<button id="frag-add2" style="margin-top:2px;padding:5px 12px;font-size:12px;background:transparent;color:var(--green);border:1px dashed var(--line);border-radius:3px;cursor:pointer;">+ 添加一句</button>';
+  html += '</div>';
 
-  html += '<div class="lbl">第 2 步 · AI 逐片段抽取案情要素 <span id="ai-status2" style="color:var(--green);">（抽取中…）</span></div>';
-  html += '<div id="ai-results2"><div style="padding:14px 0;color:var(--sub);font-size:13px;">正在调用要素抽取服务…</div></div>';
+  html += '<div style="display:flex;gap:22px;align-items:flex-start;margin-bottom:14px;font-size:12.5px;line-height:1.8;">' +
+          '<label style="display:flex;gap:8px;cursor:pointer;align-items:flex-start;"><input type="radio" name="ctxmode2" value="min" checked style="margin-top:4px;">' +
+          '<span><b>最小上下文</b><br><span style="color:var(--sub);font-size:11.5px;">每片只带前後各一句，隐私最强，推荐</span></span></label>' +
+          '<label style="display:flex;gap:8px;cursor:pointer;align-items:flex-start;"><input type="radio" name="ctxmode2" value="full" style="margin-top:4px;">' +
+          '<span><b>全文连贯</b><br><span style="color:var(--sub);font-size:11.5px;">整段案情一次性分析，上下文最全，但外发内容更多</span></span></label>' +
+          '</div>';
+
+  html += '<div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;">' +
+          '<button class="btn" id="btn-send2" style="margin:0;padding:10px 22px;font-size:13.5px;letter-spacing:1px;">确认发送并研判</button>' +
+          '<button id="btn-local2" style="margin:0;padding:10px 18px;font-size:13px;background:transparent;color:var(--sub);border:1px solid var(--line);border-radius:4px;cursor:pointer;">改用本地规则（不联网）</button>' +
+          '<span style="font-size:11.5px;color:#9A9488;">脱敏与编辑均在浏览器本地完成，原文不出本机</span></div>';
+
+  html += '<div id="ai-step2-2"></div>';
   box.innerHTML = html;
 
+  function collect2() {
+    const inputs = box.querySelectorAll(".frag-input2");
+    const arr = [];
+    for (let k = 0; k < inputs.length; k++) { const v = inputs[k].value.trim(); if (v) arr.push(v); }
+    return arr;
+  }
+
+  box.querySelectorAll(".frag-del2").forEach(function (btn) {
+    btn.addEventListener("click", function () { const r = btn.closest(".frag-row2"); if (r) r.remove(); });
+  });
+
+  document.getElementById("frag-add2").addEventListener("click", function () {
+    const list = document.getElementById("frag-list2");
+    const div = document.createElement("div");
+    div.className = "frag-row2";
+    div.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:7px;";
+    div.innerHTML = '<span style="flex:0 0 24px;"></span><input type="text" class="frag-input2" value="" placeholder="补充一句…" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;"><button class="frag-del2" style="flex:0 0 30px;height:30px;border:1px solid var(--line);background:#fff;color:#C56A4A;border-radius:3px;cursor:pointer;font-size:14px;">×</button>';
+    list.appendChild(div);
+    div.querySelector(".frag-del2").addEventListener("click", function () { div.remove(); });
+    div.querySelector(".frag-input2").focus();
+  });
+
+  document.getElementById("btn-send2").addEventListener("click", function () {
+    const finalFrags = collect2();
+    if (!finalFrags.length) {
+      document.getElementById("ai-step2-2").innerHTML = '<div class="notice" style="border-left-color:var(--red);">没有可分析的片段，请至少保留一句。</div>';
+      return;
+    }
+    const mode = (box.querySelector('input[name="ctxmode2"]:checked') || {}).value || "min";
+    document.getElementById("ai-step2-2").innerHTML =
+      '<div class="lbl">第 2 步 · AI 逐片段抽取案情要素 <span style="font-size:11.5px;color:var(--sub);">（' +
+      (mode === "full" ? "全文连贯模式" : "最小上下文模式") + '）</span> <span id="ai-status2" style="color:var(--green);">（抽取中…）</span></div>' +
+      '<div id="ai-results2"><div style="padding:14px 0;color:var(--sub);font-size:13px;">正在调用要素抽取服务…</div></div>';
+    doZhenduan(box, text, finalFrags, mode);
+  });
+
+  document.getElementById("btn-local2").addEventListener("click", function () {
+    document.getElementById("ai-step2-2").innerHTML =
+      '<div class="lbl">第 2 步 · 已跳过 AI，使用本地规则</div>' +
+      '<div class="notice" style="border-left-color:var(--green);">本次未向任何外部服务发送内容。研判结论仅依据关键词与条文结构判断，内容完全不出本机。</div>';
+    renderDiag(box, text, {});
+  });
+}
+
+async function doZhenduan(box, text, frags, ctxMode) {
   let results = [];
   try {
-    results = await classifyFragments(frags, "case");
+    results = await classifyFragments(frags, "case", ctxMode);
   } catch (e) {
-    document.getElementById("ai-results2").innerHTML =
-      '<div class="notice" style="border-left-color:var(--red);">要素抽取服务未连接（' + e.message + '）。</div>';
+    const el = document.getElementById("ai-results2");
+    if (el) el.innerHTML = '<div class="notice" style="border-left-color:var(--red);">要素抽取服务未连接（' + e.message + '）。</div>';
     renderDiag(box, text, {});
     return;
   }
@@ -1023,29 +1104,34 @@ async function renderZhenduan(text) {
   results.forEach(function (r) {
     const ic = CASE_ICON[r.type] || "—";
     const isFail = r.value === "识别失败";
-    const isUnknown = (r.type === "无法判断");
-    const bgc = isFail ? '#C9C3B6' : (isUnknown ? '#C56A4A' : 'var(--green)');
-    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);' +
-          (isUnknown ? 'background:#FBF6F3;' : '') + '">' +
+    const isUnk = (r.type === "无法判断");
+    const bgc = isFail ? '#C9C3B6' : (isUnk ? '#C56A4A' : 'var(--green)');
+    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);' + (isUnk ? 'background:#FBF6F3;' : '') + '">' +
           '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + bgc + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
           '<span style="flex:1;font-size:13.5px;">' + r.fragment + '</span>' +
-          '<span style="flex:0 0 auto;font-size:12.5px;color:' + (isFail ? 'var(--red)' : 'var(--green)') + ';font-weight:700;">' + r.type + '</span>' +
-          '<span style="flex:0 0 auto;font-size:11.5px;color:var(--sub);min-width:80px;text-align:right;">' + (r.value || '') + '</span>' +
-          '<span style="flex:0 0 auto;">' + basisChips(r.basis) + '</span>' +
-          '</div>';
+          '<span style="flex:0 0 auto;font-size:12.5px;color:' + (isFail || isUnk ? 'var(--red)' : 'var(--green)') + ';font-weight:700;">' + r.type + '</span>' +
+          '<span style="flex:0 0 auto;font-size:11.5px;color:var(--sub);min-width:80px;text-align:right;">' + (r.value || '') + '</span></div>' +
+          (isUnk ? '<div style="padding:6px 14px 10px 52px;font-size:11.5px;color:#C56A4A;line-height:1.6;">⚠ AI 无法可靠判断这一句，未作猜测。可换一种说法或忽略该片段。</div>' : '');
   });
   r2 += '</div>';
   r2 += basisPanel(results);
-  document.getElementById("ai-results2").innerHTML = r2;
-  document.getElementById("ai-status2").textContent = "（已抽取 " + results.filter(function(x){return x.value !== "识别失败";}).length + " / " + results.length + "）";
+  const el2 = document.getElementById("ai-results2");
+  if (el2) el2.innerHTML = r2;
 
-  // 第三步：要素归位
+  const st = document.getElementById("ai-status2");
+  if (st) {
+    const nUnk = results.filter(function(x){ return x.type === "无法判断"; }).length;
+    st.innerHTML = "（已抽取 " + (results.length - nUnk) + " / " + results.length +
+      (nUnk ? '，<span style="color:#C56A4A;">' + nUnk + " 处无法判断</span>" : "") + "）";
+  }
+
   const el = {};
   results.forEach(function (r) {
-    if (r.value === "识别失败" || r.type === "无关片段") return;
+    if (r.value === "识别失败" || r.type === "无关片段" || r.type === "无法判断") return;
     if (!el[r.type]) el[r.type] = [];
     el[r.type].push(r.value);
   });
+
   const CASEF = ["争议类型", "标的性质", "当事人主体", "标的金额", "签署形式", "有无书面约定", "财产所在地"];
   let r3 = '<div class="lbl">第 3 步 · 案情要素归位</div><div class="ents" style="margin-top:0;margin-bottom:18px;">';
   CASEF.forEach(function (k) {
