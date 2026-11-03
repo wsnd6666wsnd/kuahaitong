@@ -350,12 +350,21 @@ function splitClauses(text) {
   return out.slice(0, 12);
 }
 
+// 为片段补充上下文窗口：本句 + 前后各一句（仍不含当事人、金额）
+function withContext(frags, idx) {
+  const parts = [];
+  if (idx > 0) parts.push("〔上文〕" + frags[idx - 1]);
+  parts.push("〔本句〕" + frags[idx]);
+  if (idx < frags.length - 1) parts.push("〔下文〕" + frags[idx + 1]);
+  return parts.join("\n");
+}
+
 // ===== 调后端要素识别 =====
 // ===== 要素识别：后端优先，前端直连兜底 =====
 const CLAUSE_TYPES = ["请求仲裁的意思表示","诉讼的意思表示","仲裁事项","仲裁机构","仲裁地",
-                      "仲裁规则","仲裁语言","准据法","签署或签章形式","无关片段"];
+                      "仲裁规则","仲裁语言","准据法","签署或签章形式","无法判断","无关片段"];
 const CASE_TYPES_L = ["争议类型","标的性质","当事人主体","标的金额","签署形式",
-                      "有无书面约定","财产所在地","无关片段"];
+                      "有无书面约定","财产所在地","无法判断","无关片段"];
 
 function buildLawRef() {
   const law = window.KHT_LAW || {};
@@ -374,7 +383,9 @@ const PROMPT_CLAUSE = "你是法律文本的要素分类器。判断片段涉及
   "可选类型：" + CLAUSE_TYPES.join("、") + "\n" +
   "规则：提交仲裁→请求仲裁的意思表示；向法院起诉→诉讼的意思表示；具体机构名→仲裁机构；" +
   "「双方另行协商」→仲裁机构且value=约定不明；仲裁地为X→仲裁地；适用XX法律→准据法；" +
-  "仲裁语言→仲裁语言；按其仲裁规则→仲裁规则；盖章签章→签署或签章形式；其余→无关片段" +
+  "仲裁语言→仲裁语言；按其仲裁规则→仲裁规则；盖章签章→签署或签章形式；其余→无关片段\n" +
+  "重要：若片段语义含混、指代不明、你认为无法可靠判断其法律要素，type 必须填「无法判断」，" +
+  "不得猜测。宁可说看不懂，也不要给错误的分类。" +
   buildLawRef();
 
 const PROMPT_CASE = "你是法律案情的要素抽取器。判断片段涉及哪类案情要素，输出 JSON：\n" +
@@ -522,10 +533,10 @@ async function classifyFragments(fragments, mode) {
   const out = [];
   for (let i = 0; i < fragments.length; i++) {
     try {
-      const r = await callDeepSeek(fragments[i], mode);
+      const r = await callDeepSeek(withContext(fragments, i), mode);
       out.push(Object.assign({ index: i, fragment: fragments[i] }, r));
     } catch (e) {
-      out.push({ index: i, fragment: fragments[i], type: "无关片段", value: "识别失败", note: String(e).slice(0, 80) });
+      out.push({ index: i, fragment: fragments[i], type: "无法判断", value: "识别失败", note: String(e).slice(0, 80) });
     }
     if (i < fragments.length - 1) await new Promise(function (r) { setTimeout(r, 200); });
   }
@@ -583,7 +594,7 @@ function basisPanel(results) {
 const TYPE_ICON = {
   "请求仲裁的意思表示": "仲", "诉讼的意思表示": "诉", "仲裁事项": "项",
   "仲裁机构": "构", "仲裁地": "地", "仲裁规则": "规", "仲裁语言": "言",
-  "准据法": "法", "签署或签章形式": "章", "无关片段": "—"
+  "准据法": "法", "签署或签章形式": "章", "无法判断": "?", "无关片段": "—"
 };
 
 async function renderTijian(text) {
@@ -626,17 +637,30 @@ async function renderTijian(text) {
   results.forEach(function (r) {
     const ic = TYPE_ICON[r.type] || "—";
     const isFail = r.value === "识别失败";
-    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);">' +
-          '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + (isFail ? '#C9C3B6' : 'var(--green)') + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
+    const isUnknown = (r.type === "无法判断");
+    const bgc = isFail ? '#C9C3B6' : (isUnknown ? '#C56A4A' : 'var(--green)');
+    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);' +
+          (isUnknown ? 'background:#FBF6F3;' : '') + '">' +
+          '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + bgc + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
           '<span style="flex:1;font-size:13.5px;">' + r.fragment + '</span>' +
           '<span style="flex:0 0 auto;font-size:12.5px;color:' + (isFail ? 'var(--red)' : 'var(--green)') + ';font-weight:700;">' + r.type + '</span>' +
           '<span style="flex:0 0 auto;font-size:11.5px;color:var(--sub);min-width:80px;text-align:right;">' + (r.value || '') + '</span>' +
           '<span style="flex:0 0 auto;">' + basisChips(r.basis) + '</span>' +
-          '</div>';
+          '</div>' +
+          (isUnknown ? '<div style="padding:6px 14px 10px 52px;font-size:11.5px;color:#C56A4A;line-height:1.6;">' +
+            '⚠ AI 无法可靠判断这一句的法律要素，未作猜测。可换一种说法重新输入，或忽略该片段。</div>' : '');
   });
   r2 += '</div>';
   r2 += basisPanel(results);
   document.getElementById("ai-results").innerHTML = r2;
+
+  // 统计无法判断数量
+  const nUnknown = results.filter(function(x){ return x.type === "无法判断"; }).length;
+  if (nUnknown > 0) {
+    const st = document.getElementById("ai-status");
+    if (st) st.innerHTML = "（已识别 " + (results.length - nUnknown) + " / " + results.length +
+      '，<span style="color:#C56A4A;">' + nUnknown + " 处无法判断</span>）";
+  }
   document.getElementById("ai-status").textContent = "（已识别 " + results.filter(function(x){return x.value !== "识别失败";}).length + " / " + results.length + "）";
 
   // 第三步：要素归位
@@ -748,7 +772,7 @@ async function renderRules(box, text, results, elements) {
 
 const CASE_ICON = {
   "争议类型": "争", "标的性质": "质", "当事人主体": "人", "标的金额": "额",
-  "签署形式": "章", "有无书面约定": "约", "财产所在地": "财", "无关片段": "—"
+  "签署形式": "章", "有无书面约定": "约", "财产所在地": "财", "无法判断": "?", "无关片段": "—"
 };
 
 async function renderZhenduan(text) {
@@ -787,8 +811,11 @@ async function renderZhenduan(text) {
   results.forEach(function (r) {
     const ic = CASE_ICON[r.type] || "—";
     const isFail = r.value === "识别失败";
-    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);">' +
-          '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + (isFail ? '#C9C3B6' : 'var(--green)') + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
+    const isUnknown = (r.type === "无法判断");
+    const bgc = isFail ? '#C9C3B6' : (isUnknown ? '#C56A4A' : 'var(--green)');
+    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);' +
+          (isUnknown ? 'background:#FBF6F3;' : '') + '">' +
+          '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + bgc + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
           '<span style="flex:1;font-size:13.5px;">' + r.fragment + '</span>' +
           '<span style="flex:0 0 auto;font-size:12.5px;color:' + (isFail ? 'var(--red)' : 'var(--green)') + ';font-weight:700;">' + r.type + '</span>' +
           '<span style="flex:0 0 auto;font-size:11.5px;color:var(--sub);min-width:80px;text-align:right;">' + (r.value || '') + '</span>' +
