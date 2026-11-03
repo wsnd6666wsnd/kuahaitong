@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>跨海通 · 跨境争议解决文书工具</title><style>
+:root{
+  --bg:#FAFAF8; --ink:#1A1A1A; --sub:#5C5C5C; --red:#B33A3A;
+  --green:#2F5D50; --line:#D8D4CC; --card:#FFFFFF; --soft:#F0F0EE; --hl:#EAF0EC;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:"Microsoft YaHei","SimHei","Deng",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;display:flex;flex-direction:column;
+}
+.serif{font-family:"Source Han Serif SC Heavy","SimSun","Songti SC",serif;}
+
+/* 顶栏 */
+.topbar{
+  height:70px;background:var(--card);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:0 48px;gap:36px;flex-shrink:0;
+}
+.brand{display:flex;align-items:baseline;gap:16px;}
+.brand .name{font-family:"Source Han Serif SC Heavy","SimHei",serif;font-size:28px;font-weight:900;letter-spacing:2px;}
+.brand .sub{font-size:13px;color:var(--sub);letter-spacing:.5px;}
+.tabs{display:flex;gap:4px;margin-left:24px;}
+.tab{font-size:16px;color:var(--sub);padding:10px 22px;border-radius:3px;position:relative;cursor:pointer;}
+.tab:hover{background:var(--soft);}
+.tab.on{color:var(--ink);font-weight:700;background:var(--soft);}
+.tab.on::after{content:"";position:absolute;left:22px;right:22px;bottom:2px;height:2px;background:var(--green);}
+.topright{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+/* 主体 */
+.main{flex:1;display:flex;max-width:1600px;margin:0 auto;width:100%;padding:32px 0;gap:0;}
+.col{display:flex;flex-direction:column;min-height:0;padding:0 40px;}
+.col.l{border-right:1px solid var(--line);flex:0 0 46%;}
+.col.r{flex:1;}
+
+/* 区块 */
+.page{display:none;width:100%;}
+.page.on{display:flex;}
+
+.lbl{font-size:13px;color:var(--sub);letter-spacing:1.2px;margin-bottom:10px;font-weight:700;}
+
+textarea, input[type=text], input[type=number], select{
+  width:100%;background:var(--card);border:1px solid var(--line);border-radius:4px;
+  padding:14px 16px;font-size:15px;color:var(--ink);font-family:inherit;
+  line-height:1.7;resize:vertical;
+}
+textarea{min-height:150px;font-family:"Source Han Serif SC Heavy","SimSun",serif;}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 2px rgba(47,93,80,.08);}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--green);color:#fff;font-size:16px;font-weight:700;letter-spacing:3px;
+  padding:14px 28px;border:none;border-radius:4px;cursor:pointer;margin-top:20px;
+}
+.btn:hover{background:#244a40;}
+.btn:disabled{background:#9A9384;cursor:not-allowed;}
+
+.ents{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.ent{font-size:12.5px;padding:6px 11px;border-radius:3px;background:var(--soft);color:var(--sub);border:1px solid var(--line);}
+.ent b{color:var(--ink);font-weight:700;}
+
+.res{background:var(--card);border:1px solid var(--line);border-radius:4px;display:flex;margin-bottom:11px;overflow:hidden;}
+.res .bar{width:4px;flex:0 0 4px;}
+.res .body{flex:1;padding:14px 18px;display:flex;align-items:center;gap:14px;}
+.res .nm{font-size:16px;font-weight:700;flex:1;}
+.res .rule{font-size:11px;color:var(--sub);font-family:Consolas,monospace;}
+.tag{font-size:11px;padding:3px 9px;border-radius:2px;color:#fff;font-weight:700;letter-spacing:1px;flex:0 0 auto;}
+.tag.f{background:var(--red);} .tag.h{background:#C56A4A;} .tag.m{background:#9A9384;} .tag.ok{background:var(--green);}
+.lv{font-size:13px;font-weight:700;flex:0 0 42px;text-align:right;}
+.lv.f{color:var(--red);} .lv.h{color:#C56A4A;} .lv.m{color:#8A8374;}
+
+.sug{margin-top:8px;background:var(--hl);border:1px solid #C8D8CE;border-radius:4px;
+  padding:14px 18px;display:flex;gap:14px;align-items:flex-start;}
+.sug .k{font-size:11px;color:#fff;background:var(--green);padding:3px 9px;border-radius:2px;font-weight:700;flex:0 0 auto;margin-top:2px;}
+.sug .v{font-size:14px;line-height:1.8;}
+
+.src{margin-top:14px;font-size:11.5px;color:var(--sub);line-height:1.8;}
+
+.notice{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--sub);line-height:1.7;
+  background:var(--soft);border-left:3px solid var(--green);padding:11px 15px;border-radius:0 3px 3px 0;margin-top:16px;}
+
+.diag{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:20px 22px;
+  margin-bottom:14px;position:relative;overflow:hidden;}
+.diag::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;}
+.diag.d1::before{background:var(--green);} .diag.d2::before{background:var(--red);} .diag.d3::before{background:#9A9384;}
+.diag .hd{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.diag .no{font-size:11.5px;color:var(--sub);font-family:Consolas,monospace;}
+.diag .ti{font-size:17px;font-weight:700;}
+.diag .bd{font-size:14px;line-height:1.85;color:#2A2A2A;}
+.diag .bd em{font-style:normal;color:var(--red);font-weight:700;}
+.diag .bd b{color:var(--green);}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);}
+thead th{background:var(--green);color:#fff;font-size:12.5px;font-weight:700;padding:11px 13px;text-align:left;}
+thead th:first-child{border-radius:4px 0 0 0;} thead th:last-child{border-radius:0 4px 0 0;}
+tbody td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr.off td{color:#A8A296;}
+tbody tr.off td:first-child::before{content:"排除";font-size:10px;background:#C9C3B6;color:#fff;padding:2px 6px;border-radius:2px;margin-right:8px;vertical-align:middle;}
+tbody tr.first td{background:var(--hl);}
+tbody tr.first td:first-child::before{content:"优先";font-size:10px;background:var(--green);color:#fff;padding:2px 6px;border-radius:2px;margin-right:8px;vertical-align:middle;}
+td.path{font-weight:700;font-size:14px;}
+td .srcline{display:block;font-size:10px;color:#9A9488;font-family:Consolas,monospace;margin-top:3px;font-weight:400;}
+
+.foot{border-top:1px solid var(--line);padding:14px 48px;font-size:11px;color:#9A9488;
+  display:flex;gap:26px;background:var(--card);flex-shrink:0;}
+.foot .sp{margin-left:auto;}
+
+.formrow{display:flex;gap:12px;margin-bottom:14px;align-items:flex-end;}
+.formrow .f{flex:1;}
+.formrow .f label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:6px;}
+.formrow .f input,.formrow .f select{font-size:14px;padding:10px 12px;}
+
+.badge{display:inline-block;font-size:11px;background:var(--soft);color:var(--sub);padding:3px 8px;border-radius:2px;margin-right:8px;}
+
+.empty{padding:40px 20px;text-align:center;color:var(--sub);font-size:14px;}
+.empty .icon{font-size:36px;margin-bottom:12px;color:var(--line);}
+</style></head><body>
+<div class="topbar">
+  <div class="brand"><span class="name">跨海通</span><span class="sub">跨境争议解决文书工具</span></div>
+  <div class="tabs">
+    <div class="tab on" data-tab="tijian">合规审查</div>
+    <div class="tab" data-tab="zhenduan">争议研判</div>
+    <div class="tab" data-tab="jiufen">路径比对</div>
+  </div>
+  <div class="topright"><span class="dot"></span><span>规则库已对齐 2026-03-01 施行的《仲裁法》</span></div>
+</div>
+<div class="main">
+<div class="page on" id="page-tijian">
+  <div class="col l">
+    <div class="lbl">输入 · 合同中的争议解决条款</div>
+    <textarea id="clause" placeholder="例如：因本合同发生的争议，提交中国国际经济贸易仲裁委员会仲裁。"></textarea>
+    <div class="lbl" style="margin-top:16px;">或上传合同文档，自动提取争议解决条款</div>
+    <div id="dropzone" style="border:1.5px dashed var(--line);border-radius:4px;padding:16px;text-align:center;cursor:pointer;background:var(--card);transition:.15s;">
+      <div style="font-size:13px;color:var(--sub);">
+        <b style="color:var(--green);">点击选择文件</b> 或把文件拖到这里
+      </div>
+      <div style="font-size:11px;color:#A8A296;margin-top:5px;">支持 .txt / .md / .docx / .pdf</div>
+      <input type="file" id="fileinput" accept=".txt,.md,.docx,.pdf" style="display:none;">
+    </div>
+    <div id="fileinfo" style="display:none;font-size:11.5px;color:var(--green);margin-top:6px;"></div>
+
+    <div class="lbl" style="margin-top:18px;">或点选下方示例快速填入</div>
+    <div class="ents" style="margin-top:0;">
+      <span class="ent" data-demo="1">仲裁：或裁或诉 + 机构不明</span>
+      <span class="ent" data-demo="2">仲裁：机构未写明</span>
+      <span class="ent" data-demo="3">诉讼：管辖无实际联系</span>
+      <span class="ent" data-demo="4">调解：无程序无期限</span>
+      <span class="ent" data-demo="5">完整条款（无问题）</span>
+    </div>
+    <button class="btn" id="btn-tijian">开 始 审 查 →</button>
+    <div class="lbl" style="margin-top:24px;">本次审查覆盖 18 条规则　仲裁 9 · 诉讼 4 · 调解 1 · 通用 4</div>
+    <div class="ents" style="margin-top:0;">
+      <span class="ent" style="border-color:#C8D8CE;">R-01 或裁或诉</span><span class="ent" style="border-color:#C8D8CE;">R-02 机构未写明</span>
+      <span class="ent" style="border-color:#C8D8CE;">R-03 未约定仲裁地</span><span class="ent" style="border-color:#C8D8CE;">R-05 超出法定范围</span>
+      <span class="ent" style="border-color:#C8D8CE;">R-06 机构不存在</span><span class="ent" style="border-color:#C8D8CE;">R-08 机构未达成一致</span>
+      <span class="ent" style="border-color:#C8D8CE;">R-09 机构与规则错配</span><span class="ent" style="border-color:#C8D8CE;">R-11 仲裁语言不明</span>
+      <span class="ent" style="border-color:#C8D8CE;">R-12 准据法含糊</span>
+      <span class="ent" style="border-color:#C9D4E0;">R-13 协议管辖无联系</span><span class="ent" style="border-color:#C9D4E0;">R-14 违反专属管辖</span>
+      <span class="ent" style="border-color:#C9D4E0;">R-15 级别管辖不明</span><span class="ent" style="border-color:#C9D4E0;">R-16 涉外未约定管辖</span>
+      <span class="ent" style="border-color:#E0D4C9;">R-17 调解无程序</span>
+      <span class="ent">R-04 主体不适格</span><span class="ent">R-07 多文件冲突</span>
+      <span class="ent">R-10 关联文件不一致</span><span class="ent">R-18 未约定解决方式</span>
+    </div>
+  </div>
+  <div class="col r">
+    <div id="result-tijian">
+      <div class="empty"><div class="icon">⌖</div>输入条款后点击「开始审查」，结果将在此显示</div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-zhenduan">
+  <div class="col l">
+    <div class="lbl">输入 · 争议经过（自然语言即可）</div>
+    <textarea id="case" placeholder="例如：我们公司向越南客户出口了一批货，合同里写了仲裁条款，但对方只在合同上签了一方，货已经提走了，尾款二十多万还没付。"></textarea>
+    <div class="lbl" style="margin-top:16px;">或上传材料，自动提取案情</div>
+    <div id="dropzone2" style="border:1.5px dashed var(--line);border-radius:4px;padding:16px;text-align:center;cursor:pointer;background:var(--card);transition:.15s;">
+      <div style="font-size:13px;color:var(--sub);">
+        <b style="color:var(--green);">点击选择文件</b> 或把文件拖到这里
+      </div>
+      <div style="font-size:11px;color:#A8A296;margin-top:5px;">合同 · 判决书 · 律师函 · 案情说明（txt/md/docx/pdf）</div>
+      <input type="file" id="fileinput2" accept=".txt,.md,.docx,.pdf" style="display:none;">
+    </div>
+    <div id="fileinfo2" style="display:none;font-size:11.5px;color:var(--green);margin-top:6px;"></div>
+
+    <div class="lbl" style="margin-top:18px;">或点选示例</div>
+    <div class="ents" style="margin-top:0;">
+      <span class="ent" data-case="1">示例一：越南货款 · 签章不完整</span>
+      <span class="ent" data-case="2">示例二：身份关系纠纷（不可仲裁）</span>
+      <span class="ent" data-case="3">示例三：约定完整可推进</span>
+    </div>
+    <button class="btn" id="btn-zhenduan">生 成 研 判 →</button>
+    <div class="lbl" style="margin-top:26px;">研判包与审查的关系</div>
+    <div class="src" style="margin-top:0;font-size:13px;">
+      争议研判与合规审查共用同一套规则与来源字段，不单独建设数据集。<br>
+      研判结论不是法律意见。涉及金额较大、涉外因素复杂或已进入程序的事项，一律建议由执业律师介入。
+    </div>
+  </div>
+  <div class="col r">
+    <div class="lbl">研判结论</div>
+    <div id="result-zhenduan"><div class="empty"><div class="icon">⌖</div>输入争议经过后点击「生成研判」，结论将在此显示</div></div>
+  </div>
+</div>
+
+<div class="page" id="page-jiufen">
+  <div class="col l">
+    <div class="lbl">案情要素 · 请逐项填写</div>
+    <div class="formrow">
+      <div class="f"><label>双方主体国籍</label><select id="f-country"><option value="">请选择</option><option>中国 / 越南</option><option>中国 / 新加坡</option><option>中国 / 马来西亚</option><option>中国 / 其他东盟国家</option></select></div>
+    </div>
+    <div class="formrow">
+      <div class="f"><label>合同金额（美元）</label><input type="number" id="f-amount" placeholder="例如 220000"></div>
+    </div>
+    <div class="formrow">
+      <div class="f"><label>有无仲裁约定</label><select id="f-arb"><option value="">请选择</option><option>有，且签署完整</option><option>有，但签署不完整</option><option>无</option></select></div>
+      <div class="f"><label>约定的仲裁机构</label><select id="f-inst"><option value="">请选择</option><option>未约定或约定不明</option><option>中国国际经济贸易仲裁委员会</option><option>新加坡国际仲裁中心</option><option>越南国际仲裁中心</option><option>马来西亚亚洲国际仲裁中心</option><option>其他机构</option></select></div>
+    </div>
+    <div class="formrow">
+      <div class="f"><label>标的性质</label><select id="f-type"><option value="">请选择</option><option>国际货物买卖货款</option><option>跨境服务合同</option><option>投资合作</option><option>其他</option></select></div>
+    </div>
+    <div class="formrow">
+      <div class="f"><label>对方财产所在地</label><input type="text" id="f-asset" placeholder="例如 越南"></div>
+    </div>
+    <button class="btn" id="btn-jiufen">生 成 比 对 →</button>
+  </div>
+  <div class="col r">
+    <div class="lbl">路径比对 · 8 条路径统一口径</div>
+    <div id="result-jiufen"><div class="empty"><div class="icon">⌖</div>填写案情要素后点击「生成比对」，对比表将在此显示</div></div>
+  </div>
+</div>
+</div><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="config.js"></script>
+<script src="law.js"></script>
+<script src="law2.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+</script>
+<script>
+// ============ 规则库（与申报书一致）============
+const RULES = [
+  { id:"R-01", name:"或裁或诉", lv:"致命", cls:"f",
+    match: s => (s.includes("法院") && (s.includes("仲裁") || s.includes("仲裁委"))) &&
+                (s.includes("或") || s.includes("也可以") || s.includes("同时")),
+    why:"仲裁和诉讼两条路都留着，实践中常被认定仲裁协议无效，最后只能去法院，条款白写。",
+    fix:"只保留一种，把另一句整句删掉。", basis:["《仲裁法》第二十七条","《民诉法》第三十五条"] },
+  { id:"R-02", name:"仲裁机构未写明", lv:"高", cls:"h",
+    match: s => /提交仲裁|仲裁解决|由仲裁机构|提交有关仲裁|由有关仲裁/.test(s) &&
+                !/中国国际经济贸易仲裁委员会|新加坡国际仲裁中心|越南国际仲裁中心|马来西亚亚洲国际仲裁中心|仲裁委员会|仲裁中心|仲裁院/.test(s),
+    why:"机构不明确可能被认定仲裁协议无效，等于根本没有仲裁条款。",
+    fix:"写明机构全称，如「提交中国国际经济贸易仲裁委员会按其届时有效的仲裁规则仲裁」。", basis:["《仲裁法》第二十七条","《仲裁法》第二十九条"] },
+  { id:"R-03", name:"未约定仲裁地", lv:"中", cls:"m",
+    match: s => /仲裁/.test(s) && !/仲裁地/.test(s),
+    why:"仲裁地决定适用哪国程序法，也直接影响裁决能不能在对方国家被承认执行。（仅在选择仲裁时检查）",
+    fix:"补一句「仲裁地为××（如新加坡）」。", basis:["《仲裁法》第八十一条"] },
+  { id:"R-04", name:"主体不适格", lv:"高", cls:"h",
+    match: s => /未成年人|限制民事行为能力|无权代理/.test(s),
+    why:"主体不适格会导致仲裁协议无效或不存在仲裁协议。",
+    fix:"明确签订合同人为当事人，并具有完全民事行为能力。", basis:["《仲裁法》第二十八条"] },
+  { id:"R-05", name:"超出法定仲裁范围", lv:"致命", cls:"f",
+    match: s => /婚姻|收养|监护|扶养|继承|行政争议/.test(s),
+    why:"超出仲裁范围，仲裁协议无效。",
+    fix:"删去超出法定可仲裁范围的约定。", basis:["《仲裁法》第三条"] },
+  { id:"R-06", name:"仲裁机构不存在", lv:"高", cls:"h",
+    match: s => /华南经济贸易仲裁中心/.test(s),
+    why:"约定的仲裁机构虚构，仲裁协议可能无效。",
+    fix:"改为现实存在、依法设立并有仲裁资质的机构全称。", basis:["《仲裁法》第二十七条"] },
+  { id:"R-07", name:"多份文件约定冲突", lv:"高", cls:"h",
+    match: s => /补充协议|担保合同|从合同/.test(s) && /不一致|冲突/.test(s),
+    why:"约定不明，仲裁协议可能无效。",
+    fix:"统一各文件的争议解决约定，以最新一份为准。", basis:["《仲裁法》第二十七条"] },
+  { id:"R-08", name:"机构选择未达成一致", lv:"高", cls:"h",
+    match: s => /另行协商|待定|留白/.test(s),
+    why:"约定不明，可能导致仲裁协议无效。",
+    fix:"签约时就明确唯一、具体、可执行的仲裁机构全称。", basis:["《仲裁法》第二十九条"] },
+  { id:"R-09", name:"机构与规则不匹配", lv:"中", cls:"m",
+    match: s => /仲裁委员会/.test(s) && /上海仲裁委|北京仲裁委/.test(s),
+    why:"仲裁机构可直接拒绝受理，导致仲裁无法启动。",
+    fix:"确保机构与规则一一对应匹配。", basis:["《仲裁法》第二十七条"] },
+  { id:"R-10", name:"关联文件约定不一致", lv:"中", cls:"m",
+    match: s => /主合同|担保合同|补充协议/.test(s) && /不一致/.test(s),
+    why:"争议在何地、何机构仲裁无法确定。",
+    fix:"统一各合同对仲裁地、机构、规则的约定。", basis:["《仲裁法》第二十七条"] },
+  { id:"R-11", name:"仲裁语言不明确", lv:"中", cls:"m",
+    match: s => /仲裁/.test(s) && !/仲裁语言|以中文|以英文/.test(s),
+    why:"争议发生后，仲裁语言没写清楚，可能导致翻译成本、证据提交和程序效率失控。（仅在选择仲裁时检查）",
+    fix:"明确约定仲裁语言，如「仲裁程序以中文进行」。", basis:["《仲裁法》第二十七条"] },
+  { id:"R-12", name:"准据法约定含糊", lv:"中", cls:"m",
+    match: s => /适用.*法律/.test(s) && /含糊|不清|矛盾/.test(s),
+    why:"准据法不明将导致实体争议与仲裁程序适用法律不确定。",
+    fix:"分别约定合同实体准据法、仲裁程序法及仲裁地所在国法律。", basis:["《仲裁法》第二十七条"] },
+  // ---------- 诉讼路径 ----------
+  { id:"R-13", name:"协议管辖无实际联系", lv:"高", cls:"h",
+    match: s => /法院管辖|人民法院管辖/.test(s) && !/被告住所地|合同履行地|合同签订地|原告住所地|标的物所在地|不动产所在地|实际联系/.test(s) && /由.{0,12}法院/.test(s),
+    why:"《民诉法》第三十五条要求协议选择的法院须与争议有实际联系，否则约定无效，最终仍按法定管辖处理。",
+    fix:"改为被告住所地、合同履行地、合同签订地、原告住所地或标的物所在地法院，或直接写明与争议确有联系的连接点。", basis:["《民诉法》第三十五条"] },
+  { id:"R-14", name:"违反专属管辖", lv:"致命", cls:"f",
+    match: s => /不动产|港口作业|继承/.test(s) && /法院管辖|人民法院管辖/.test(s) && !/不动产所在地|港口所在地|被继承人死亡时住所地|主要遗产所在地/.test(s),
+    why:"《民诉法》第三十四条规定不动产、港口作业、继承纠纷由特定法院专属管辖，协议管辖不得违反，否则约定无效。",
+    fix:"专属管辖案件由法定法院受理，删除与之冲突的管辖约定。", basis:["《民诉法》第三十四条"] },
+  { id:"R-15", name:"级别管辖约定不明", lv:"中", cls:"m",
+    match: s => /有管辖权的(人民)?法院|有管辖权的人民法院/.test(s),
+    why:"级别管辖由法律规定，当事人不能约定。「由有管辖权的法院管辖」等于没有约定，仍按法定管辖确定。",
+    fix:"写明具体法院名称，如「由南宁市青秀区人民法院管辖」。", basis:["《民诉法》第三十四条","《民诉法》第三十五条"] },
+  { id:"R-16", name:"涉外纠纷未约定法院管辖", lv:"中", cls:"m",
+    match: s => /涉外|外国|越南|东盟|马来西亚|新加坡|泰国|印尼/.test(s) && !/法院管辖|人民法院管辖|仲裁/.test(s),
+    why:"涉外民事纠纷依《民诉法》第二百七十七条可由当事人书面协议选择中国法院管辖，未约定将按法定管辖确定，可能不利。",
+    fix:"补充「由中华人民共和国XX人民法院管辖」的书面约定。", basis:["《民诉法》第二百七十七条"] },
+  // ---------- 调解路径 ----------
+  { id:"R-17", name:"调解条款缺乏可执行程序", lv:"中", cls:"m",
+    match: s => /友好协商|协商解决|协商不成/.test(s) && !/期限|日内|调解机构|调解规则|调解员|仲裁|法院|诉讼/.test(s),
+    why:"只写「友好协商解决」而无期限、机构与程序，也未约定协商不成后的路径，争议发生后无法启动。",
+    fix:"补充协商期限（如「三十日内」）、协商不成的后续路径，以及拟适用的调解规则或调解机构。", basis:["《新加坡调解公约》第一条"] },
+  { id:"R-18", name:"争议解决方式未约定", lv:"致命", cls:"f",
+    match: s => s.length > 10 && s.length < 60 && !/仲裁|诉讼|法院|调解|协商/.test(s),
+    why:"合同中完全没有约定争议解决方式，发生争议后只能按法定管辖起诉，且可能因管辖权异议拖延时间。",
+    fix:"补充争议解决条款，明确选择诉讼或仲裁，并写明机构/法院、适用规则与地点。" }
+];
+
+const DEMOS = {
+  "1": "因本合同发生的争议，双方可向法院起诉或提交仲裁解决，仲裁机构由双方另行协商确定。",
+  "2": "因本合同发生的争议，双方同意提交仲裁解决。",
+  "3": "因本合同发生的争议，由北京市第三人民法院管辖。",
+  "4": "本合同履行中发生争议，双方应友好协商解决。",
+  "5": "因本合同发生的争议，提交中国国际经济贸易仲裁委员会，按其届时有效的仲裁规则仲裁。仲裁地为北京，仲裁程序以中文进行。"
+};
+
+const CASES = {
+  "1": "我们公司向越南客户出口了一批货，合同里写了仲裁条款，但对方只在合同上签了一方，货已经提走了，尾款二十多万还没付。",
+  "2": "我们公司与前员工发生劳动合同纠纷，涉及抚养费支付问题。",
+  "3": "我们公司向越南客户出口货物，合同完整签署了仲裁条款，机构为中国国际经济贸易仲裁委员会，仲裁地为北京，语言为中文。"
+};
+
+// ===== 片段切分（面罩：模型只看单片）=====
+function splitClauses(text) {
+  const raw = text.split(/[，。；;,\n]/);
+  const out = [];
+  for (const x of raw) {
+    const t = x.trim();
+    if (t.length >= 4) out.push(t);
+  }
+  return out.slice(0, 12);
+}
+
+// ===== 调后端要素识别 =====
+// ===== 要素识别：后端优先，前端直连兜底 =====
+const CLAUSE_TYPES = ["请求仲裁的意思表示","诉讼的意思表示","仲裁事项","仲裁机构","仲裁地",
+                      "仲裁规则","仲裁语言","准据法","签署或签章形式","无关片段"];
+const CASE_TYPES_L = ["争议类型","标的性质","当事人主体","标的金额","签署形式",
+                      "有无书面约定","财产所在地","无关片段"];
+
+function buildLawRef() {
+  const law = window.KHT_LAW || {};
+  const keys = Object.keys(law);
+  if (!keys.length) return "";
+  let t = "\n\n【可用条文依据】识别时必须结合下列条文，并在 basis 中列出所依据的条号：\n";
+  keys.forEach(function (k) {
+    t += "- " + k + "：" + law[k].text + "\n";
+  });
+  t += "注意：只能引用上述条文，不得引用库外条文。若片段与任何条文无关，basis 填 []。";
+  return t;
+}
+
+const PROMPT_CLAUSE = "你是法律文本的要素分类器。判断片段涉及哪类法律要素，输出 JSON：\n" +
+  '{"type":"要素类型","value":"具体内容，未明确写「未明确」","basis":["引用的条号"],"note":"判断依据"}\n' +
+  "可选类型：" + CLAUSE_TYPES.join("、") + "\n" +
+  "规则：提交仲裁→请求仲裁的意思表示；向法院起诉→诉讼的意思表示；具体机构名→仲裁机构；" +
+  "「双方另行协商」→仲裁机构且value=约定不明；仲裁地为X→仲裁地；适用XX法律→准据法；" +
+  "仲裁语言→仲裁语言；按其仲裁规则→仲裁规则；盖章签章→签署或签章形式；其余→无关片段" +
+  buildLawRef();
+
+const PROMPT_CASE = "你是法律案情的要素抽取器。判断片段涉及哪类案情要素，输出 JSON：\n" +
+  '{"type":"要素类型","value":"具体内容，未提及写「未提及」","basis":["引用的条号"],"note":"判断依据"}\n' +
+  "可选类型：" + CASE_TYPES_L.join("、") + "\n" +
+  "规则：争议是什么→争议类型；合同性质或交易标的→标的性质；当事人国别身份→当事人主体；" +
+  "金额数字→标的金额；签章情况→签署形式；提到合同协议→有无书面约定；财产所在地→财产所在地；其余→无关片段" +
+  buildLawRef();
+
+async function callDeepSeek(fragment, mode) {
+  const cfg = window.KHT_CONFIG || {};
+  if (!cfg.DEMO_KEY) throw new Error("未配置密钥");
+  const resp = await fetch(cfg.API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + cfg.DEMO_KEY
+    },
+    body: JSON.stringify({
+      model: cfg.MODEL || "deepseek-chat",
+      messages: [
+        { role: "system", content: mode === "case" ? PROMPT_CASE : PROMPT_CLAUSE },
+        { role: "user", content: "片段：" + fragment }
+      ],
+      temperature: 0,
+      max_tokens: 200,
+      response_format: { type: "json_object" }
+    })
+  });
+  if (!resp.ok) throw new Error("API " + resp.status);
+  const d = await resp.json();
+  let p;
+  try { p = JSON.parse(d.choices[0].message.content); } catch (e) { p = { type: "无关片段", value: "解析失败" }; }
+  const valid = mode === "case" ? CASE_TYPES_L : CLAUSE_TYPES;
+  if (valid.indexOf(p.type) < 0) p.type = "无关片段";
+  return p;
+}
+
+async function classifyFragments(fragments, mode) {
+  mode = mode || "clause";
+
+  // 1) 优先走后端（本地开发 / 有服务端时）
+  try {
+    const resp = await fetch("/api/classify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", basis:["《仲裁法》第二十七条","《民诉法》第三十五条"] },
+      body: JSON.stringify({ fragments: fragments, mode: mode })
+    });
+    if (resp.ok) {
+      const d = await resp.json();
+      // 后端全部失败时也视为不可用，转直连
+      const allFailed = d.results && d.results.length &&
+                        d.results.every(function (x) { return x.value === "识别失败"; });
+      if (d.ok && d.results && d.results.length && !allFailed) return d.results;
+    }
+  } catch (e) { /* 后端不可用，走直连 */ }
+
+  // 2) 前端直连（纯静态部署）
+  const cfg = window.KHT_CONFIG || {};
+  if (!cfg.ALLOW_DIRECT) throw new Error("未启用直连且后端不可用");
+
+  const out = [];
+  for (let i = 0; i < fragments.length; i++) {
+    try {
+      const r = await callDeepSeek(fragments[i], mode);
+      out.push(Object.assign({ index: i, fragment: fragments[i] }, r));
+    } catch (e) {
+      out.push({ index: i, fragment: fragments[i], type: "无关片段", value: "识别失败", note: String(e).slice(0, 80) });
+    }
+    if (i < fragments.length - 1) await new Promise(function (r) { setTimeout(r, 200); });
+  }
+  return out;
+}
+
+
+// ===== 条文依据渲染 =====
+function basisChips(basis) {
+  if (!basis || !basis.length) return '<span style="font-size:11px;color:#B0AA9E;">—</span>';
+  return basis.map(function (b) {
+    return '<span style="display:inline-block;font-size:10.5px;color:var(--green);background:#EAF0EC;' +
+           'border:1px solid #C8D8CE;border-radius:2px;padding:1px 6px;margin-left:4px;">' + b + '</span>';
+  }).join('');
+}
+
+function basisPanel(results) {
+  const law = window.KHT_LAW || {};
+  const used = {};
+  (results || []).forEach(function (r) {
+    (r.basis || []).forEach(function (b) { used[b] = (used[b] || 0) + 1; });
+  });
+  let keys = Object.keys(used);
+  if (!keys.length) {
+    // 模型没返回 basis 时，按要素类型映射回退
+    (results || []).forEach(function (r) {
+      const m = (window.KHT_TYPE_BASIS || {})[r.type] || [];
+      m.forEach(function (b) { used[b] = (used[b] || 0) + 1; });
+    });
+    keys = Object.keys(used);
+  }
+  if (!keys.length) return "";
+  let h = '<div style="margin-top:18px;margin-bottom:18px;">';
+  h += '<div class="lbl">条文依据 · AI 识别时引用的条文（' + keys.length + ' 条）</div>';
+  h += '<div style="background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:0 4px 4px 0;overflow:hidden;">';
+  keys.forEach(function (k) {
+    const v = law[k];
+    if (!v) return;
+    h += '<div style="padding:12px 16px;border-bottom:1px solid var(--line);">';
+    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;">';
+    h += '<span style="font-size:13px;font-weight:700;color:var(--green);">' + k + '</span>';
+    h += '<span style="font-size:11.5px;color:var(--sub);">' + v.title + '</span>';
+    h += '<span style="margin-left:auto;font-size:10.5px;color:#9A9488;">引用 ' + used[k] + ' 次</span>';
+    h += '</div>';
+    h += '<div style="font-size:12.5px;line-height:1.8;color:#2A2A2A;font-family:\'Source Han Serif SC\',\'SimSun\',serif;">' + v.text + '</div>';
+    h += '<div style="font-size:11px;color:var(--sub);margin-top:5px;">用途：' + v.use + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '<div class="src" style="margin-top:8px;">条文原文以司法部、联合国国际贸易法委员会官方公布文本为准。AI 仅可引用上述条文，不得引用库外条文。</div>';
+  h += '</div>';
+  return h;
+}
+
+const TYPE_ICON = {
+  "请求仲裁的意思表示": "仲", "诉讼的意思表示": "诉", "仲裁事项": "项",
+  "仲裁机构": "构", "仲裁地": "地", "仲裁规则": "规", "仲裁语言": "言",
+  "准据法": "法", "签署或签章形式": "章", "无关片段": "—"
+};
+
+async function renderTijian(text) {
+  const box = document.getElementById("result-tijian");
+  if (!text.trim()) {
+    box.innerHTML = '<div class="empty"><div class="icon">⌖</div>请输入条款后再审查</div>';
+    return;
+  }
+
+  const frags = splitClauses(text);
+
+  // 第一步：显示切分结果 + 识别中
+  let html = '<div class="lbl">第 1 步 · 条款切分为 ' + frags.length + ' 个片段</div>';
+  html += '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin-bottom:18px;font-size:13px;line-height:2;">';
+  html += '<span style="color:var(--sub);font-size:11.5px;">模型只接收以下片段，不接收完整合同 —— 此为最小必要上下文（Data Minimization）</span><br>';
+  frags.forEach(function (f, i) {
+    html += '<span style="display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:2px 8px;margin:3px 4px 3px 0;">' +
+            '<span style="color:var(--sub);font-family:Consolas,monospace;font-size:10px;">' + (i+1) + '</span> ' + f + '</span>';
+  });
+  html += '</div>';
+
+  html += '<div class="lbl">第 2 步 · AI 逐片段识别要素 <span id="ai-status" style="color:var(--green);">（识别中…）</span></div>';
+  html += '<div id="ai-results"><div style="padding:14px 0;color:var(--sub);font-size:13px;">正在调用要素识别服务…</div></div>';
+  box.innerHTML = html;
+
+  // 调用接口
+  let results = [];
+  try {
+    results = await classifyFragments(frags);
+  } catch (e) {
+    document.getElementById("ai-results").innerHTML =
+      '<div class="notice" style="border-left-color:var(--red);">要素识别服务未连接（' + e.message + '）。<br>' +
+      '本原型需在本地启动 server.mjs 后方可使用 AI 识别层；规则判断层不依赖该服务。</div>';
+    renderRules(box, text, []);
+    return;
+  }
+
+  // 第二步结果
+  let r2 = '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:18px;">';
+  results.forEach(function (r) {
+    const ic = TYPE_ICON[r.type] || "—";
+    const isFail = r.value === "识别失败";
+    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);">' +
+          '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + (isFail ? '#C9C3B6' : 'var(--green)') + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
+          '<span style="flex:1;font-size:13.5px;">' + r.fragment + '</span>' +
+          '<span style="flex:0 0 auto;font-size:12.5px;color:' + (isFail ? 'var(--red)' : 'var(--green)') + ';font-weight:700;">' + r.type + '</span>' +
+          '<span style="flex:0 0 auto;font-size:11.5px;color:var(--sub);min-width:80px;text-align:right;">' + (r.value || '') + '</span>' +
+          '<span style="flex:0 0 auto;">' + basisChips(r.basis) + '</span>' +
+          '</div>';
+  });
+  r2 += '</div>';
+  r2 += basisPanel(results);
+  document.getElementById("ai-results").innerHTML = r2;
+  document.getElementById("ai-status").textContent = "（已识别 " + results.filter(function(x){return x.value !== "识别失败";}).length + " / " + results.length + "）";
+
+  // 第三步：要素归位
+  const elements = {};
+  results.forEach(function (r) {
+    if (r.value === "识别失败" || r.type === "无关片段") return;
+    if (!elements[r.type]) elements[r.type] = [];
+    elements[r.type].push(r.value);
+  });
+  // 判断走了哪条路径
+  const hasArb = (elements["请求仲裁的意思表示"] && elements["请求仲裁的意思表示"].length) ||
+                 (elements["仲裁机构"] && elements["仲裁机构"].length);
+  const hasLit = (elements["诉讼的意思表示"] && elements["诉讼的意思表示"].length) ||
+                 (elements["管辖法院"] && elements["管辖法院"].length);
+  const ARB_ELEMS = ["请求仲裁的意思表示", "仲裁事项", "仲裁机构", "仲裁地", "仲裁规则", "仲裁语言", "准据法"];
+  const LIT_ELEMS = ["诉讼的意思表示", "管辖法院", "准据法"];
+  const COMMON = ["签署或签章形式"];
+
+  let r3 = '<div class="lbl">第 3 步 · 要素归位</div>';
+  if (!hasArb && !hasLit) {
+    r3 += '<div class="notice" style="border-left-color:#C56A4A;">未从条款中识别出明确的争议解决方式（仲裁 / 诉讼 / 调解）。' +
+          '由规则引擎判断是否构成缺陷。</div>';
+  } else {
+    if (hasArb) {
+      r3 += '<div style="font-size:12px;color:var(--sub);margin-bottom:6px;">识别到 <b style="color:var(--green);">仲裁</b> 路径，检查以下要素：</div>';
+      r3 += '<div class="ents" style="margin-top:0;margin-bottom:12px;">';
+      ARB_ELEMS.forEach(function (k) {
+        const v = elements[k];
+        const has = v && v.length;
+        r3 += '<span class="ent" style="' + (has ? 'border-color:var(--green);' : '') + '">' + k +
+              ' <b style="color:' + (has ? 'var(--green)' : 'var(--red)') + '">' + (has ? v.join("、") : "缺失") + '</b></span>';
+      });
+      r3 += '</div>';
+    }
+    if (hasLit) {
+      r3 += '<div style="font-size:12px;color:var(--sub);margin-bottom:6px;">识别到 <b style="color:#2F5D50;">诉讼</b> 路径，检查以下要素：</div>';
+      r3 += '<div class="ents" style="margin-top:0;margin-bottom:12px;">';
+      LIT_ELEMS.forEach(function (k) {
+        const v = elements[k];
+        const has = v && v.length;
+        r3 += '<span class="ent" style="' + (has ? 'border-color:#C9D4E0;' : '') + '">' + k +
+              ' <b style="color:' + (has ? '#2F5D50' : 'var(--red)') + '">' + (has ? v.join("、") : "缺失") + '</b></span>';
+      });
+      r3 += '</div>';
+    }
+    if (hasArb && hasLit) {
+      r3 += '<div class="notice" style="border-left-color:var(--red);">同时识别到仲裁与诉讼两种安排，可能构成「或裁或诉」，见规则 R-01。</div>';
+    }
+    r3 += '<div style="font-size:11px;color:#9A9488;margin-bottom:18px;">' +
+          (hasArb && !hasLit ? '本条款未选择诉讼路径，故不检查法院管辖要素。' :
+           hasLit && !hasArb ? '本条款未选择仲裁路径，故不检查仲裁地、仲裁语言等要素。' : '') + '</div>';
+  }
+  box.insertAdjacentHTML("beforeend", r3);
+
+  // 第四步：规则判断
+  renderRules(box, text, results, elements);
+}
+
+// ===== 规则判断层 =====
+function renderRules(box, text, results, elements) {
+  const hits = RULES.filter(function (r) { return r.match(text); });
+  let h = '<div class="lbl">第 4 步 · 规则引擎判断</div>';
+  if (!hits.length) {
+    h += '<div class="notice" style="border-left-color:var(--green);">现有 18 条规则未检出相应问题。<br>注意：这不等于条款有效，仅表示未命中已收录的缺陷类型。</div>';
+  } else {
+    h += '<div style="margin-bottom:10px;font-size:12.5px;color:var(--sub);">命中 ' + hits.length + ' 条规则，判断由规则引擎完成，模型不参与</div>';
+    for (const r of hits) {
+      h += '<div class="res"><div class="bar" style="background:' +
+        (r.cls==='f'?'#B33A3A':r.cls==='h'?'#C56A4A':'#9A9384') + '"></div>' +
+        '<div class="body"><span class="tag ' + r.cls + '">' + r.lv + '</span>' +
+        '<span class="nm">' + r.name + '</span>' +
+        '<span class="rule">' + r.id + '</span>' +
+        '<span class="lv ' + r.cls + '">' + r.lv + '</span></div></div>' +
+        '<div class="sug"><span class="k">建议</span><div class="v">' + r.fix + '</div></div>';
+    }
+  }
+  // 依据按命中规则动态汇总
+  const usedSrc = {};
+  hits.forEach(function (r) {
+    (r.basis || []).forEach(function (b) { usedSrc[b] = 1; });
+  });
+  const srcKeys = Object.keys(usedSrc);
+  if (srcKeys.length) {
+    h += '<div class="src">本条规则依据：' + srcKeys.join('　') + '</div>';
+  }
+  h += '<div class="notice">依据待核与规则未覆盖的事项不作判断。本报告仅作为争议解决前期参考，不替代执业律师针对具体案件出具的法律意见。</div>';
+  box.insertAdjacentHTML("beforeend", h);
+}
+
+const CASE_ICON = {
+  "争议类型": "争", "标的性质": "质", "当事人主体": "人", "标的金额": "额",
+  "签署形式": "章", "有无书面约定": "约", "财产所在地": "财", "无关片段": "—"
+};
+
+async function renderZhenduan(text) {
+  const box = document.getElementById("result-zhenduan");
+  if (!text.trim()) {
+    box.innerHTML = '<div class="empty"><div class="icon">⌖</div>请输入争议经过后再研判</div>';
+    return;
+  }
+
+  const frags = splitClauses(text);
+
+  let html = '<div class="lbl">第 1 步 · 案情切分为 ' + frags.length + ' 个片段</div>';
+  html += '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin-bottom:18px;font-size:13px;line-height:2;">';
+  html += '<span style="color:var(--sub);font-size:11.5px;">模型只接收以下片段，不接收完整案情叙述 —— 此为最小必要上下文（Data Minimization）</span><br>';
+  frags.forEach(function (f, i) {
+    html += '<span style="display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:2px 8px;margin:3px 4px 3px 0;">' +
+            '<span style="color:var(--sub);font-family:Consolas,monospace;font-size:10px;">' + (i+1) + '</span> ' + f + '</span>';
+  });
+  html += '</div>';
+
+  html += '<div class="lbl">第 2 步 · AI 逐片段抽取案情要素 <span id="ai-status2" style="color:var(--green);">（抽取中…）</span></div>';
+  html += '<div id="ai-results2"><div style="padding:14px 0;color:var(--sub);font-size:13px;">正在调用要素抽取服务…</div></div>';
+  box.innerHTML = html;
+
+  let results = [];
+  try {
+    results = await classifyFragments(frags, "case");
+  } catch (e) {
+    document.getElementById("ai-results2").innerHTML =
+      '<div class="notice" style="border-left-color:var(--red);">要素抽取服务未连接（' + e.message + '）。</div>';
+    renderDiag(box, text, {});
+    return;
+  }
+
+  let r2 = '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:18px;">';
+  results.forEach(function (r) {
+    const ic = CASE_ICON[r.type] || "—";
+    const isFail = r.value === "识别失败";
+    r2 += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);">' +
+          '<span style="flex:0 0 26px;height:26px;border-radius:3px;background:' + (isFail ? '#C9C3B6' : 'var(--green)') + ';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;">' + ic + '</span>' +
+          '<span style="flex:1;font-size:13.5px;">' + r.fragment + '</span>' +
+          '<span style="flex:0 0 auto;font-size:12.5px;color:' + (isFail ? 'var(--red)' : 'var(--green)') + ';font-weight:700;">' + r.type + '</span>' +
+          '<span style="flex:0 0 auto;font-size:11.5px;color:var(--sub);min-width:80px;text-align:right;">' + (r.value || '') + '</span>' +
+          '<span style="flex:0 0 auto;">' + basisChips(r.basis) + '</span>' +
+          '</div>';
+  });
+  r2 += '</div>';
+  r2 += basisPanel(results);
+  document.getElementById("ai-results2").innerHTML = r2;
+  document.getElementById("ai-status2").textContent = "（已抽取 " + results.filter(function(x){return x.value !== "识别失败";}).length + " / " + results.length + "）";
+
+  // 第三步：要素归位
+  const el = {};
+  results.forEach(function (r) {
+    if (r.value === "识别失败" || r.type === "无关片段") return;
+    if (!el[r.type]) el[r.type] = [];
+    el[r.type].push(r.value);
+  });
+  const CASEF = ["争议类型", "标的性质", "当事人主体", "标的金额", "签署形式", "有无书面约定", "财产所在地"];
+  let r3 = '<div class="lbl">第 3 步 · 案情要素归位</div><div class="ents" style="margin-top:0;margin-bottom:18px;">';
+  CASEF.forEach(function (k) {
+    const v = el[k];
+    r3 += '<span class="ent">' + k + ' <b>' + (v ? v.join("、") : "未提及") + '</b></span>';
+  });
+  r3 += '</div>';
+  box.insertAdjacentHTML("beforeend", r3);
+
+  renderDiag(box, text, el);
+}
+
+function renderDiag(box, text, el) {
+  const isExcluded = /婚姻|收养|监护|扶养|抚养|继承|行政争议/.test(text);
+  const hasFullSign = /签章完整|已签署|双方.*签/.test(text) || (el["签署形式"] && el["签署形式"].join("").indexOf("完整") >= 0);
+  let d1, d2, d3;
+  if (isExcluded) {
+    d1 = "本案涉及身份关系或行政争议，<em>不属于依法可以仲裁的范围</em>。《仲裁法》第三条列明不能仲裁的情形为婚姻、收养、监护、扶养、继承纠纷，以及依法应由行政机关处理的行政争议。";
+    d2 = "因争议类型被排除，系统不再进入后续路径比较。";
+    d3 = "建议通过诉讼或其他法定途径解决，具体处置请由执业律师判断。";
+  } else {
+    d1 = "本案为平等主体之间的合同纠纷，<b>不在法定排除范围内</b>。《仲裁法》第三条列明不能仲裁的情形为婚姻、收养、监护、扶养、继承纠纷，以及依法应由行政机关处理的行政争议。";
+    d2 = hasFullSign
+      ? "系统检出签署形式完整。<b>既有约定可继续使用</b>，无需先处理效力障碍。"
+      : "系统检出签署形式不完整。<em>合同仅一方签章时，仲裁条款可能不产生效力</em>——浙江省贸促会公布的一起同类案件中，浙江永康某公司向越南公司出口 34,843 美元货物，因买卖合同缺少买方签章，仲裁条款对外方不产生效力，尾款只能通过敦促履约收回。";
+    d3 = "建议先以非诉方式催收并固定对方承认欠款的证据，同步核查合同签章与往来记录；若协商不成，再进入路径比较。本项结论依据为公开规则与案例，<b>具体处置请由执业律师判断</b>。";
+  }
+  box.insertAdjacentHTML("beforeend",
+    '<div class="lbl">第 4 步 · 研判结论</div>' +
+    '<div class="diag d1"><div class="hd"><span class="no">01</span><span class="ti">属于依法可以仲裁的范围</span><span class="tag ' + (isExcluded?'f':'ok') + '">' + (isExcluded?'不可仲裁':'可仲裁') + '</span></div><div class="bd">' + d1 + '</div></div>' +
+    '<div class="diag d2"><div class="hd"><span class="no">02</span><span class="ti">既有约定的效力核查</span><span class="tag ' + (isExcluded?'m':(hasFullSign?'ok':'f')) + '">' + (isExcluded?'不适用':(hasFullSign?'可推进':'需先处理')) + '</span></div><div class="bd">' + d2 + '</div></div>' +
+    '<div class="diag d3"><div class="hd"><span class="no">03</span><span class="ti">下一步动作建议</span><span class="tag m">转介</span></div><div class="bd">' + d3 + '</div></div>' +
+    '<div class="src">依据：《仲裁法》第三条、第二十七条　·　案例来源：浙江省贸促会《国际商事调解》案例精选（二十四），2021</div>');
+}
+
+const PATHS = [
+  {
+    name: "商事调解", src: "《新加坡调解公约》框架",
+    url: "https://uncitral.un.org/en/texts/mediation/conventions/international_settlement_agreements",
+    time: "数周至数月", cost: "远低于诉讼与仲裁",
+    exec: "依公约在缔约国申请执行", risk: "公约批准国仍有限",
+    judge: function () {
+      return { status: "ok", rank: 10,
+               reason: "调解不排斥其他路径，可与其他方案并行推进" };
+    }
+  },
+  {
+    name: "中国国际经济贸易仲裁委员会", src: "CIETAC 仲裁规则",
+    url: "http://www.cietac.org/",
+    time: "约 1 年内", cost: "按争议金额分段累进",
+    exec: "《纽约公约》框架内可申请承认执行", risk: "费用高于诉讼",
+    judge: function (o) {
+      if (o.arb === "无") return { status: "off", rank: 95,
+        reason: "无仲裁约定，不能单方将争议提交仲裁" };
+      if (o.inst === "中国国际经济贸易仲裁委员会") return { status: "ok", rank: 20,
+        reason: "与合同约定的机构一致，可直接依约提交" };
+      if (o.inst === "未约定或约定不明") return { status: "warn", rank: 45,
+        reason: "机构约定不明，依《仲裁法》第二十九条可补充协议；达不成补充协议的，仲裁协议无效" };
+      if (o.inst && o.inst !== "其他机构" && o.inst !== "中国国际经济贸易仲裁委员会") return { status: "off", rank: 96,
+        reason: "与合同约定的机构不符，不能单方改向本机构提交" };
+      var r = { status: "warn", rank: 48, reason: "须核对合同实际约定的机构；若约定其他机构，本路径不适用" };
+      if (o.arb === "有，但签署不完整") { r.status = "warn"; r.rank = 55; r.reason = "签署不完整，仲裁条款可能对对方不生效，须先确认效力" }
+      return r;
+    }
+  },
+  {
+    name: "越南国际仲裁中心", src: "VIAC 仲裁规则",
+    url: "https://www.viac.vn/",
+    time: "听证后约 30 日", cost: "同标的下低于 SIAC",
+    exec: "越南境内无需承认程序", risk: "境外执行仍需承认程序",
+    judge: function (o) {
+      if (o.arb === "无") return { status: "off", rank: 95,
+        reason: "无仲裁约定，不能单方将争议提交仲裁" };
+      if (o.inst === "越南国际仲裁中心") return { status: "ok", rank: 18,
+        reason: "与合同约定的机构一致，可直接依约提交" };
+      if (o.inst === "未约定或约定不明") return { status: "warn", rank: 45,
+        reason: "机构约定不明，依《仲裁法》第二十九条可补充协议；达不成补充协议的，仲裁协议无效" };
+      if (o.inst && o.inst !== "其他机构" && o.inst !== "越南国际仲裁中心") return { status: "off", rank: 96,
+        reason: "与合同约定的机构不符，不能单方改向本机构提交" };
+      var r = { status: "warn", rank: 48, reason: "须核对合同实际约定的机构；若约定其他机构，本路径不适用" };
+      if (o.arb === "有，但签署不完整") { r.status = "warn"; r.rank = 55; r.reason = "签署不完整，仲裁条款可能对对方不生效，须先确认效力" }
+      return r;
+    }
+  },
+  {
+    name: "新加坡国际仲裁中心", src: "SIAC 仲裁规则",
+    url: "https://www.siac.org.sg/",
+    time: "约 15 个月", cost: "管理费 + 仲裁庭报酬",
+    exec: "需向执行地法院申请承认", risk: "费用显著偏高",
+    judge: function (o) {
+      if (o.arb === "无") return { status: "off", rank: 95,
+        reason: "无仲裁约定，不能单方将争议提交仲裁" };
+      if (o.inst === "新加坡国际仲裁中心") return { status: "ok", rank: 22,
+        reason: "与合同约定的机构一致，可直接依约提交" };
+      if (o.inst === "未约定或约定不明") return { status: "warn", rank: 45,
+        reason: "机构约定不明，依《仲裁法》第二十九条可补充协议；达不成补充协议的，仲裁协议无效" };
+      if (o.inst && o.inst !== "其他机构" && o.inst !== "新加坡国际仲裁中心") return { status: "off", rank: 96,
+        reason: "与合同约定的机构不符，不能单方改向本机构提交" };
+      var r = { status: "warn", rank: 48, reason: "须核对合同实际约定的机构；若约定其他机构，本路径不适用" };
+      if (o.arb === "有，但签署不完整") { r.status = "warn"; r.rank = 55; r.reason = "签署不完整，仲裁条款可能对对方不生效，须先确认效力" }
+      return r;
+    }
+  },
+  {
+    name: "马来西亚亚洲国际仲裁中心", src: "AIAC 仲裁规则",
+    url: "https://www.aiac.world/",
+    time: "快速程序约 6 个月", cost: "注册费起收 + 管理费",
+    exec: "公约成员国可申请承认", risk: "小额争议费用占比高",
+    judge: function (o) {
+      if (o.arb === "无") return { status: "off", rank: 95,
+        reason: "无仲裁约定，不能单方将争议提交仲裁" };
+      if (o.inst === "马来西亚亚洲国际仲裁中心") return { status: "ok", rank: 24,
+        reason: "与合同约定的机构一致，可直接依约提交" };
+      if (o.inst === "未约定或约定不明") return { status: "warn", rank: 45,
+        reason: "机构约定不明，依《仲裁法》第二十九条可补充协议；达不成补充协议的，仲裁协议无效" };
+      if (o.inst && o.inst !== "其他机构" && o.inst !== "马来西亚亚洲国际仲裁中心") return { status: "off", rank: 96,
+        reason: "与合同约定的机构不符，不能单方改向本机构提交" };
+      var r = { status: "warn", rank: 48, reason: "须核对合同实际约定的机构；若约定其他机构，本路径不适用" };
+      if (o.arb === "有，但签署不完整") { r.status = "warn"; r.rank = 55; r.reason = "签署不完整，仲裁条款可能对对方不生效，须先确认效力" }
+      return r;
+    }
+  },
+  {
+    name: "中国法院诉讼", src: "《民事诉讼法》管辖规定",
+    url: "https://www.chinacourt.org/",
+    time: "一审二审约 1–2 年", cost: "按标的额比例收取案件受理费",
+    exec: "判决在境外承认执行难度较大", risk: "可能胜诉但无法实际执行",
+    judge: function (o) {
+      if (o.arb === "有，且签署完整") return { status: "off", rank: 95,
+        reason: "已存在有效仲裁约定，法院通常不予受理，除仲裁协议无效" };
+      if (o.arb === "有，但签署不完整") return { status: "warn", rank: 50,
+        reason: "须先确认仲裁协议是否有效；若有效，法院不予受理" };
+      var r = { status: "ok", rank: 35, reason: "无仲裁约定，可依《民诉法》第三十五条约定管辖法院" };
+      return r;
+    }
+  },
+  {
+    name: "对象国当地法院诉讼", src: "《民事诉讼法》涉外编 / 越南法院",
+    url: "https://www.chinacourt.org/",
+    time: "4–6 个月起", cost: "按当地诉讼费标准",
+    exec: "中国判决在对方国一般不被直接承认", risk: "程序刚性、语言与代理成本高",
+    judge: function (o) {
+      if (o.arb === "有，且签署完整") return { status: "off", rank: 95,
+        reason: "已存在有效仲裁约定，法院通常不予受理" };
+      var r = { status: "ok", rank: 40, reason: "无仲裁约定时可依当地法律起诉" };
+      if (o.asset && o.country && o.asset.length > 0 && o.country.indexOf(o.asset) >= 0) {
+        r.rank = 22;
+        r.reason = "可执行财产位于对方国，就地起诉便于查控与执行";
+      }
+      return r;
+    }
+  },
+  {
+    name: "投资仲裁", src: "国际投资协定（如 ICSID）",
+    url: "https://icsid.worldbank.org/",
+    time: "通常 2–4 年", cost: "高（律师费与仲裁费用均为商事仲裁数倍）",
+    exec: "裁决在《华盛顿公约》缔约国可执行", risk: "主体与争议类型受限",
+    judge: function (o) {
+      if (o.type !== "投资合作") return { status: "off", rank: 99,
+        reason: "企业间货物买卖或服务合同纠纷不适用投资仲裁，主体与争议均不符合条约要件" };
+      return { status: "warn", rank: 60,
+        reason: "仅外国投资者依投资条约起诉东道国政府时适用；企业间合同争议原则上仍走商事仲裁" };
+    }
+  },
+];
+
+function renderJiufen() {
+  const box = document.getElementById("result-jiufen");
+  const o = {
+    country: document.getElementById("f-country").value,
+    amount: parseFloat(document.getElementById("f-amount").value) || 0,
+    arb: document.getElementById("f-arb").value,
+    inst: document.getElementById("f-inst").value,
+    type: document.getElementById("f-type").value,
+    asset: document.getElementById("f-asset").value.trim()
+  };
+
+  if (!o.country && !o.arb) {
+    box.innerHTML = '<div class="notice" style="border-left-color:#C56A4A;">' +
+      '请至少填写「双方主体国籍」与「有无仲裁约定」两项——路径的适用与否主要由这两项决定。</div>';
+    return;
+  }
+
+  const rows = PATHS.map(function (p) {
+    const r = p.judge(o);
+    return { p: p, status: r.status, reason: r.reason, rank: r.rank };
+  });
+
+  const order = { ok: 0, warn: 1, off: 2 };
+  rows.sort(function (a, b) {
+    if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+    return a.rank - b.rank;
+  });
+
+  const nOk = rows.filter(function (x) { return x.status === "ok"; }).length;
+  const nWarn = rows.filter(function (x) { return x.status === "warn"; }).length;
+  const nOff = rows.filter(function (x) { return x.status === "off"; }).length;
+
+  let h = '<div style="display:flex;gap:10px;margin-bottom:14px;font-size:12.5px;">' +
+    '<span style="background:#EAF0EC;border:1px solid #C8D8CE;border-radius:3px;padding:5px 11px;color:var(--green);font-weight:700;">适用 ' + nOk + ' 条</span>' +
+    '<span style="background:#FBF3EE;border:1px solid #E4C9BC;border-radius:3px;padding:5px 11px;color:#C56A4A;font-weight:700;">需注意 ' + nWarn + ' 条</span>' +
+    '<span style="background:#F2F0EC;border:1px solid var(--line);border-radius:3px;padding:5px 11px;color:#8A8374;font-weight:700;">已排除 ' + nOff + ' 条</span>' +
+    '</div>';
+
+  h += '<div style="font-size:12px;color:var(--sub);margin-bottom:10px;">' +
+       '依据输入：' + (o.country || "国别未填") + '　·　' +
+       (o.amount ? ("标的 " + o.amount.toLocaleString() + " 美元") : "标的未填") + '　·　' +
+       (o.arb || "仲裁约定未填") + '　·　' + (o.inst || "机构未填") + '　·　' + (o.type || "标的性质未填") + '</div>';
+
+  h += '<table><thead><tr><th style="width:22%;">路径</th><th style="width:30%;">判断结论</th>' +
+       '<th style="width:12%;">一般耗时</th><th style="width:14%;">费用构成</th>' +
+       '<th style="width:11%;">境外执行</th><th style="width:11%;">主要风险</th></tr></thead><tbody>';
+
+  for (const r of rows) {
+    const p = r.p;
+    const badge = r.status === "ok"
+      ? '<span style="font-size:10px;background:var(--green);color:#fff;padding:2px 7px;border-radius:2px;font-weight:700;">适用</span>'
+      : r.status === "warn"
+      ? '<span style="font-size:10px;background:#C56A4A;color:#fff;padding:2px 7px;border-radius:2px;font-weight:700;">需注意</span>'
+      : '<span style="font-size:10px;background:#B0AA9E;color:#fff;padding:2px 7px;border-radius:2px;font-weight:700;">排除</span>';
+    const cls = r.status === "off" ? "off" : (r.status === "ok" && r.rank <= 20 ? "first" : "");
+    h += '<tr class="' + cls + '">' +
+      '<td class="path">' + p.name +
+        '<span class="srcline"><a href="' + p.url + '" target="_blank" rel="noopener" style="color:#9A9488;text-decoration:none;border-bottom:1px dotted #C9C3B6;">' +
+        p.src + ' ↗</a></span></td>' +
+      '<td>' + badge + ' <span style="font-size:12.5px;line-height:1.7;">' + r.reason + '</span></td>' +
+      '<td>' + p.time + '</td><td>' + p.cost + '</td><td>' + p.exec + '</td><td>' + p.risk + '</td></tr>';
+  }
+  h += '</tbody></table>';
+
+  h += '<div class="src" style="margin-top:14px;">判断依据为你已确认的案情要素与各路径的适用条件；' +
+       '排除不等于该机构不受理，而是依现有要素判断其不具备直接适用的前提。' +
+       '耗时与费用优先引用机构现行规则与程序期限，具体数额以机构现行收费表为准。' +
+       '裁决能否执行需结合公约适用、执行地法律与财产情况判断，不将缔约关系表述为自动执行。</div>';
+
+  box.innerHTML = h;
+}
+
+// ============ 交互绑定 ============
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
+    t.classList.add("on");
+    const id = t.dataset.tab;
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("on"));
+    document.getElementById("page-" + id).classList.add("on");
+  });
+});
+document.querySelectorAll("[data-demo]").forEach(e => {
+  e.addEventListener("click", () => {
+    document.getElementById("clause").value = DEMOS[e.dataset.demo];
+    e.style.background = "#EAF0EC";
+  });
+});
+document.querySelectorAll("[data-case]").forEach(e => {
+  e.addEventListener("click", () => {
+    document.getElementById("case").value = CASES[e.dataset.case];
+    e.style.background = "#EAF0EC";
+  });
+});
+document.getElementById("btn-tijian").addEventListener("click", () => renderTijian(document.getElementById("clause").value));
+document.getElementById("btn-zhenduan").addEventListener("click", () => renderZhenduan(document.getElementById("case").value));
+document.getElementById("btn-jiufen").addEventListener("click", renderJiufen);
+
+
+// ===== 文档读取 =====
+async function readTxt(file) {
+  return await file.text();
+}
+
+async function readDocx(file) {
+  if (!window.JSZip) throw new Error("DOCX 解析库未加载（需联网）");
+  const buf = await file.arrayBuffer();
+  const zip = await window.JSZip.loadAsync(buf);
+  const xml = await zip.file("word/document.xml").async("string");
+  // 段落转换行，去标签
+  let t = xml.replace(/<\/w:p>/g, "\n").replace(/<[^>]+>/g, "");
+  t = t.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
+  return t;
+}
+
+async function readPdf(file) {
+  if (!window.pdfjsLib) throw new Error("PDF 解析库未加载（需联网）");
+  const buf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+  let out = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, 8); i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    out.push(tc.items.map(function (x) { return x.str; }).join(""));
+  }
+  return out.join("\n");
+}
+
+async function extractFile(file) {
+  const n = file.name.toLowerCase();
+  if (n.endsWith(".txt") || n.endsWith(".md")) return await readTxt(file);
+  if (n.endsWith(".docx")) return await readDocx(file);
+  if (n.endsWith(".pdf")) return await readPdf(file);
+  throw new Error("不支持的文件类型");
+}
+
+// ===== 从全文中提取争议解决条款片段 =====
+function pickDisputeClause(text) {
+  const t = text.replace(/\s+/g, " ").trim();
+  // 优先匹配含争议解决关键词的句子
+  const keys = ["仲裁", "诉讼", "法院", "争议", "纠纷", "管辖", "调解"];
+  const sents = t.split(/[。；;\n]/).map(function (x) { return x.trim(); }).filter(function (x) { return x.length > 6; });
+  const hit = sents.filter(function (s) {
+    let c = 0;
+    keys.forEach(function (k) { if (s.indexOf(k) >= 0) c++; });
+    return c >= 2 || (c >= 1 && /仲裁|管辖/.test(s));
+  });
+  if (hit.length) return hit.slice(0, 3).join("。") + "。";
+  // 没有明显条款则返回全文前 300 字
+  return t.slice(0, 300);
+}
+
+
+// ===== 从全文中提取案情描述 =====
+function pickCaseText(text) {
+  const t = text.replace(/\s+/g, " ").trim();
+  const keys = ["争议", "纠纷", "欠款", "违约", "货款", "尾款", "合同", "起诉", "索赔",
+                "损失", "交付", "提货", "付款", "履行", "签章", "签字", "仲裁", "诉讼"];
+  const sents = t.split(/[。；;\n]/).map(function (x) { return x.trim(); })
+                  .filter(function (x) { return x.length > 8; });
+  const hit = sents.filter(function (s) {
+    let c = 0;
+    keys.forEach(function (k) { if (s.indexOf(k) >= 0) c++; });
+    return c >= 2;
+  });
+  if (hit.length) return hit.slice(0, 4).join("。") + "。";
+  // 没命中则返回较长的前几段
+  const long = sents.filter(function (x) { return x.length > 20; });
+  if (long.length) return long.slice(0, 3).join("。") + "。";
+  return t.slice(0, 400);
+}
+
+function bindDropzone(opts) {
+  const dz = document.getElementById(opts.zone);
+  const fi = document.getElementById(opts.input);
+  const info = document.getElementById(opts.info);
+  const target = document.getElementById(opts.target);
+  if (!dz || !fi) return;
+
+  dz.addEventListener("click", function () { fi.click(); });
+  dz.addEventListener("dragover", function (e) {
+    e.preventDefault(); dz.style.borderColor = "var(--green)"; dz.style.background = "#F7F9F8";
+  });
+  dz.addEventListener("dragleave", function () {
+    dz.style.borderColor = "var(--line)"; dz.style.background = "var(--card)";
+  });
+  dz.addEventListener("drop", function (e) {
+    e.preventDefault();
+    dz.style.borderColor = "var(--line)"; dz.style.background = "var(--card)";
+    if (e.dataTransfer.files.length) handle(e.dataTransfer.files[0]);
+  });
+  fi.addEventListener("change", function () {
+    if (fi.files.length) handle(fi.files[0]);
+  });
+
+  async function handle(file) {
+    info.style.display = "block";
+    info.style.color = "var(--sub)";
+    info.textContent = "正在读取 " + file.name + " …";
+    try {
+      const raw = await extractFile(file);
+      const picked = opts.pick(raw);
+      target.value = picked;
+      info.style.color = "var(--green)";
+      info.innerHTML = "已读取 <b>" + file.name + "</b>（" + raw.length + " 字），" +
+        opts.label + " " + picked.length + " 字，已填入左侧输入框。";
+    } catch (e) {
+      info.style.color = "var(--red)";
+      info.textContent = "读取失败：" + e.message + "。可改为复制文本后粘贴。";
+    }
+  }
+}
+
+function bindUpload() {
+  bindDropzone({
+    zone: "dropzone", input: "fileinput", info: "fileinfo",
+    target: "clause", pick: pickDisputeClause, label: "提取到争议解决条款"
+  });
+  bindDropzone({
+    zone: "dropzone2", input: "fileinput2", info: "fileinfo2",
+    target: "case", pick: pickCaseText, label: "提取到案情描述"
+  });
+}
+
+// ===== URL 参数支持（便于演示与分享）=====
+bindUpload();
+(function () {
+  const q = new URLSearchParams(location.search);
+  const tab = q.get("tab");
+  if (tab) {
+    const el = document.querySelector('[data-tab="' + tab + '"]');
+    if (el) el.click();
+  }
+  const clause = q.get("clause");
+  if (clause) {
+    document.getElementById("clause").value = decodeURIComponent(clause);
+    if (q.get("run") !== "0") setTimeout(() => document.getElementById("btn-tijian").click(), 200);
+  }
+  const demo = q.get("demo");
+  if (demo && DEMOS[demo]) {
+    document.getElementById("clause").value = DEMOS[demo];
+    if (q.get("run") !== "0") setTimeout(() => document.getElementById("btn-tijian").click(), 200);
+  }
+  const cs = q.get("case");
+  if (cs) {
+    document.getElementById("case").value = decodeURIComponent(cs);
+    if (q.get("run") !== "0") setTimeout(() => document.getElementById("btn-zhenduan").click(), 200);
+  }
+  // 路径比对表单预填
+  const F = { country: "f-country", amount: "f-amount", arb: "f-arb", inst: "f-inst", type: "f-type", asset: "f-asset" };
+  let filled = false;
+  Object.keys(F).forEach(function (k) {
+    const v = q.get(k);
+    if (v) { const el = document.getElementById(F[k]); if (el) { el.value = v; filled = true; } }
+  });
+  if ((q.get("run") === "1" || filled) && tab === "jiufen") {
+    setTimeout(() => document.getElementById("btn-jiufen").click(), 300);
+  }
+})();
+</script>
+<div class="foot">
+  <span>原型演示 · 非运行系统</span>
+  <span class="sp">勤劳致富组 · 广西民族大学法学院</span>
+  <span>2026 年中国（广西）—东盟“AI+法律”应用创新大赛</span>
+</div>
+</body></html>
