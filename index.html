@@ -72,6 +72,10 @@ textarea:focus,input:focus,select:focus{outline:none;border-color:var(--green);b
 .lv{font-size:13px;font-weight:700;flex:0 0 42px;text-align:right;}
 .lv.f{color:var(--red);} .lv.h{color:#C56A4A;} .lv.m{color:#8A8374;}
 
+.aiwhy{margin-top:8px;background:#F4F7F5;border:1px solid #D5E0D9;border-left:3px solid var(--green);
+  border-radius:0 4px 4px 0;padding:13px 16px;display:flex;gap:12px;align-items:flex-start;transition:.2s;}
+.aiwhy .k2{font-size:11px;color:#fff;background:var(--green);padding:3px 9px;border-radius:2px;font-weight:700;flex:0 0 auto;margin-top:2px;}
+.aiwhy .v2{font-size:13.5px;line-height:1.85;flex:1;}
 .sug{margin-top:8px;background:var(--hl);border:1px solid #C8D8CE;border-radius:4px;
   padding:14px 18px;display:flex;gap:14px;align-items:flex-start;}
 .sug .k{font-size:11px;color:#fff;background:var(--green);padding:3px 9px;border-radius:2px;font-weight:700;flex:0 0 auto;margin-top:2px;}
@@ -208,7 +212,12 @@ td .srcline{display:block;font-size:10px;color:#9A9488;font-family:Consolas,mono
 
 <div class="page" id="page-jiufen">
   <div class="col l">
-    <div class="lbl">案情要素 · 请逐项填写</div>
+    <div class="lbl">用一句话描述情况（AI 自动填表）</div>
+    <textarea id="path-text" style="min-height:78px;font-size:14px;font-family:inherit;" placeholder="例如：我们向越南客户出口货物，合同签了但对方只签了一方，货已提走，尾款二十二万美元没付。"></textarea>
+    <button class="btn" id="btn-parse" style="margin-top:10px;padding:10px 20px;font-size:14px;letter-spacing:2px;background:#3D6B5C;">AI 解析并填表 →</button>
+    <div id="parse-info" style="font-size:11.5px;color:var(--sub);margin-top:6px;"></div>
+
+    <div class="lbl" style="margin-top:22px;">或逐项填写案情要素</div>
     <div class="formrow">
       <div class="f"><label>双方主体国籍</label><select id="f-country"><option value="">请选择</option><option>中国 / 越南</option><option>中国 / 新加坡</option><option>中国 / 马来西亚</option><option>中国 / 其他东盟国家</option></select></div>
     </div>
@@ -402,6 +411,89 @@ async function callDeepSeek(fragment, mode) {
   const valid = mode === "case" ? CASE_TYPES_L : CLAUSE_TYPES;
   if (valid.indexOf(p.type) < 0) p.type = "无关片段";
   return p;
+}
+
+// ===== AI 解释层：针对具体条款生成解释（规则只给结论，AI 负责说清为什么）=====
+// ===== AI 归一化：把自然语言案情转成结构化要素（路径比对用）=====
+async function parseScenario(text) {
+  const cfg = window.KHT_CONFIG || {};
+  if (!cfg.DEMO_KEY) throw new Error("未配置密钥");
+
+  const sys = "你是案情要素抽取器。把用户描述的情况归一化为结构化字段。\n" +
+    "输出 JSON：{\"country\":\"\",\"amount\":0,\"arb\":\"\",\"inst\":\"\",\"type\":\"\",\"asset\":\"\"}\n" +
+    "各字段取值范围（必须严格从下列选项中选择，无法判断填空字符串）：\n" +
+    "country: 中国 / 越南 | 中国 / 新加坡 | 中国 / 马来西亚 | 中国 / 其他东盟国家\n" +
+    "arb: 有，且签署完整 | 有，但签署不完整 | 无\n" +
+    "inst: 未约定或约定不明 | 中国国际经济贸易仲裁委员会 | 新加坡国际仲裁中心 | 越南国际仲裁中心 | 马来西亚亚洲国际仲裁中心 | 其他机构\n" +
+    "type: 国际货物买卖货款 | 跨境服务合同 | 投资合作 | 其他\n" +
+    "asset: 填写国家名（如 越南），无财产线索填空字符串\n" +
+    "amount: 只填数字（美元），如 220000\n" +
+    "注意：提到「只签了一方」「缺签章」「没盖章」一律判为 有，但签署不完整；提到「没写仲裁」「没约定仲裁」判为 无";
+
+  const resp = await fetch(cfg.API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.DEMO_KEY },
+    body: JSON.stringify({
+      model: cfg.MODEL || "deepseek-chat",
+      messages: [{ role: "system", content: sys }, { role: "user", content: text }],
+      temperature: 0,
+      max_tokens: 400,
+      response_format: { type: "json_object" }
+    })
+  });
+  if (!resp.ok) throw new Error("API " + resp.status);
+  const d = await resp.json();
+  return JSON.parse(d.choices[0].message.content);
+}
+
+async function explainDefects(clause, hits) {
+  const cfg = window.KHT_CONFIG || {};
+  if (!cfg.DEMO_KEY) return null;
+  if (!hits || !hits.length) return null;
+
+  const law = window.KHT_LAW || {};
+  // 只把命中的条文传给模型，不传全部
+  const usedLaw = {};
+  hits.forEach(function (r) { (r.basis || []).forEach(function (b) { if (law[b]) usedLaw[b] = law[b]; }); });
+  let lawText = "";
+  Object.keys(usedLaw).forEach(function (k) { lawText += "- " + k + "：" + usedLaw[k].text + "\n"; });
+
+  const list = hits.map(function (r) {
+    return "[" + r.id + "] " + r.name + "（" + r.lv + "）";
+  }).join("\n");
+
+  const sys = "你是法律文书解释助手。用户会给你：一条合同争议解决条款、规则引擎检出的缺陷列表、相关法条。\n" +
+    "你的任务：针对这条具体条款，逐条说明每个缺陷在本条款中具体表现在哪里、会造成什么后果。\n" +
+    "要求：\n" +
+    "1. 必须引用条款中的原话，指出是哪几个字导致的问题\n" +
+    "2. 只依据给定的法条，不得引用其他条文\n" +
+    "3. 每条不超过 60 字，说人话，不堆术语\n" +
+    "4. 输出 JSON：{\"explanations\":[{\"id\":\"R-01\",\"text\":\"...\"}]}\n" +
+    "5. 不得改变缺陷等级，不得给出法律意见结论";
+
+  const user = "条款原文：" + clause + "\n\n检出的缺陷：\n" + list + "\n\n相关法条：\n" + lawText;
+
+  try {
+    const resp = await fetch(cfg.API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.DEMO_KEY },
+      body: JSON.stringify({
+        model: cfg.MODEL || "deepseek-chat",
+        messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+        temperature: 0.2,
+        max_tokens: 900,
+        response_format: { type: "json_object" }
+      })
+    });
+    if (!resp.ok) return null;
+    const d = await resp.json();
+    const parsed = JSON.parse(d.choices[0].message.content);
+    const map = {};
+    (parsed.explanations || []).forEach(function (e) { if (e.id && e.text) map[e.id] = e.text; });
+    return map;
+  } catch (e) {
+    return null;
+  }
 }
 
 async function classifyFragments(fragments, mode) {
@@ -604,7 +696,7 @@ async function renderTijian(text) {
 }
 
 // ===== 规则判断层 =====
-function renderRules(box, text, results, elements) {
+async function renderRules(box, text, results, elements) {
   const hits = RULES.filter(function (r) { return r.match(text); });
   let h = '<div class="lbl">第 4 步 · 规则引擎判断</div>';
   if (!hits.length) {
@@ -618,7 +710,8 @@ function renderRules(box, text, results, elements) {
         '<span class="nm">' + r.name + '</span>' +
         '<span class="rule">' + r.id + '</span>' +
         '<span class="lv ' + r.cls + '">' + r.lv + '</span></div></div>' +
-        '<div class="sug"><span class="k">建议</span><div class="v">' + r.fix + '</div></div>';
+        '<div class="aiwhy" id="why-' + r.id + '" data-fix="' + r.fix.replace(/"/g, "&quot;") + '">' +
+          '<span class="k2">解释</span><span class="v2" style="color:#9A9488;">AI 正在结合条款原文生成解释…</span></div>';
     }
   }
   // 依据按命中规则动态汇总
@@ -632,6 +725,25 @@ function renderRules(box, text, results, elements) {
   }
   h += '<div class="notice">依据待核与规则未覆盖的事项不作判断。本报告仅作为争议解决前期参考，不替代执业律师针对具体案件出具的法律意见。</div>';
   box.insertAdjacentHTML("beforeend", h);
+
+  // 异步请求 AI 解释
+  if (hits.length) {
+    explainDefects(text, hits).then(function (map) {
+      hits.forEach(function (r) {
+        const el = document.getElementById("why-" + r.id);
+        if (!el) return;
+        const fix = el.getAttribute("data-fix") || "";
+        const exp = map && map[r.id];
+        if (exp) {
+          el.innerHTML = '<span class="k2">解释</span><div style="flex:1;">' +
+            '<div class="v2">' + exp + '</div>' +
+            '<div style="font-size:12px;color:var(--green);margin-top:6px;font-weight:700;">建议：' + fix + '</div></div>';
+        } else {
+          el.innerHTML = '<span class="k2">建议</span><div class="v2" style="flex:1;">' + fix + '</div>';
+        }
+      });
+    });
+  }
 }
 
 const CASE_ICON = {
@@ -862,6 +974,7 @@ const PATHS = [
 ];
 
 function renderJiufen() {
+ try {
   const box = document.getElementById("result-jiufen");
   const o = {
     country: document.getElementById("f-country").value,
@@ -931,6 +1044,10 @@ function renderJiufen() {
        '裁决能否执行需结合公约适用、执行地法律与财产情况判断，不将缔约关系表述为自动执行。</div>';
 
   box.innerHTML = h;
+ } catch (err) {
+  const b = document.getElementById("result-jiufen");
+  if (b) b.innerHTML = '<div class="notice" style="border-left-color:var(--red);">渲染错误：' + err.message + '<br><pre style="font-size:11px;white-space:pre-wrap;">' + (err.stack||'').slice(0,400) + '</pre></div>';
+ }
 }
 
 // ============ 交互绑定 ============
@@ -958,6 +1075,56 @@ document.querySelectorAll("[data-case]").forEach(e => {
 document.getElementById("btn-tijian").addEventListener("click", () => renderTijian(document.getElementById("clause").value));
 document.getElementById("btn-zhenduan").addEventListener("click", () => renderZhenduan(document.getElementById("case").value));
 document.getElementById("btn-jiufen").addEventListener("click", renderJiufen);
+
+// AI 解析并填表
+document.getElementById("btn-parse").addEventListener("click", function () {
+  const box = document.getElementById("parse-info");
+  const ta = document.getElementById("path-text");
+  if (!ta || !box) return;
+  const txt = (ta.value || "").trim();
+  if (!txt) { box.style.color = "var(--red)"; box.textContent = "请先输入一段描述"; return; }
+  box.style.color = "var(--sub)";
+  box.textContent = "AI 正在解析…";
+
+  parseScenario(txt).then(function (o) {
+    const FIELD = [
+      ["country", "f-country"],
+      ["arb",     "f-arb"],
+      ["inst",    "f-inst"],
+      ["type",    "f-type"],
+      ["asset",   "f-asset"]
+    ];
+    const got = [];
+
+    for (let n = 0; n < FIELD.length; n++) {
+      const key = FIELD[n][0], elId = FIELD[n][1];
+      const el = document.getElementById(elId);
+      if (!el) continue;
+      const v = o && o[key] ? String(o[key]) : "";
+      if (!v) continue;
+      let matched = false;
+      for (let m = 0; m < el.options.length; m++) {
+        if (el.options[m].value === v) { matched = true; break; }
+      }
+      if (matched) { el.value = v; got.push(v); }
+    }
+
+    // 金额单独处理
+    const amtEl = document.getElementById("f-amount");
+    if (amtEl && o && o.amount) { amtEl.value = o.amount; got.push("金额 " + o.amount); }
+
+    box.style.color = "var(--green)";
+    box.textContent = "已识别 " + got.length + " 项：" + (got.length ? got.join("　·　") : "无");
+
+    try { renderJiufen(); } catch (e) {
+      box.style.color = "var(--red)";
+      box.textContent = "填表完成，但比对渲染失败：" + e.message;
+    }
+  }).catch(function (e) {
+    box.style.color = "var(--red)";
+    box.textContent = "失败：" + e.message + " | " + ((e.stack||"").split("\n")[1]||"").trim();
+  });
+});
 
 
 // ===== 文档读取 =====
@@ -1143,6 +1310,17 @@ bindUpload();
     const v = q.get(k);
     if (v) { const el = document.getElementById(F[k]); if (el) { el.value = v; filled = true; } }
   });
+  const sc = q.get("scenario");
+  if (sc) {
+    const pt = document.getElementById("path-text");
+    if (pt) { pt.value = decodeURIComponent(sc); filled = true; }
+  }
+  if (q.get("autoparse") === "1") {
+    setTimeout(function () {
+      const b = document.getElementById("btn-parse");
+      if (b) b.click();
+    }, 400);
+  }
   if ((q.get("run") === "1" || filled) && tab === "jiufen") {
     setTimeout(() => document.getElementById("btn-jiufen").click(), 300);
   }
